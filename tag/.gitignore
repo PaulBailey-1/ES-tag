@@ -1,0 +1,6 @@
+\node_modules
+\.vscode
+setup.sh
+server.js
+old.js
+.project

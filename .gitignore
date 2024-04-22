@@ -1,0 +1,5 @@
+tag\node_modules
+\.vscode
+tag\server.js
+**\__pycache__
+**\.venv

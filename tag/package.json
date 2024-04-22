@@ -4,7 +4,9 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "npx tsc && npm run copy-assets",
+    "start": "node ./build/server.js",
+    "copy-assets": "cp -r static/ build/"
   },
   "author": "",
   "license": "ISC",
@@ -13,5 +15,8 @@
     "express": "^4.17.1",
     "lodash": "^4.17.15",
     "socket.io": "^4.4.1"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.5"
   }
 }

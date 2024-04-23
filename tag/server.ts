@@ -426,7 +426,7 @@ class Player extends Graphic {
                 if (this.platformDown) {
                     this.yspeed = playerYSpeed;
                 } else {
-                    this.yspeed = (top2 - bottom1) / dt;
+                    this.yspeed = (top2 - bottom1) / dt / 2;
                     this.grounded = true;
                     this.wallTimeout = false;
                 }

@@ -1,13 +1,15 @@
 # from src.agent import Agent
 from src.optimizer import Optimizer
 from src.game_connection import GameConnection
-from src.tagger_bot import TaggerBot
+from src.simple_agent import SimpleAgent
 
 import time
 
+gameUrl = "http://localhost:5000"
+
 if (__name__ == "__main__"):
 
-    bot = TaggerBot()
+    bot = SimpleAgent(gameUrl)
     while(True):
         bot.run()
         time.sleep(0.001)

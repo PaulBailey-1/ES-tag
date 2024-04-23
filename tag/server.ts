@@ -33,10 +33,10 @@ interface Connection {
 const width = 1000;
 const height = 500;
 
-const playerXSpeed = 8;
-const playerYSpeed = 10;
+const playerXSpeed = 8 / 17;
+const playerYSpeed = 12 / 17;
 
-const gravity = 0.4;
+const gravity = 0.03 / 17.0;
 const initScore = 60;
 const powerUpTime = 25;
 const powerUpValue = 5;
@@ -125,6 +125,7 @@ class Game {
     public playerCount: number;
     private lastScoreTime: number;
     private powerUpCounter: number;
+    private lastUpdateTime: number;
 
     constructor(id: number) {
         this.id = id;
@@ -132,6 +133,7 @@ class Game {
         this.playerCount = 0;
         this.lastScoreTime = 0.0;
         this.powerUpCounter = powerUpTime;
+        this.lastUpdateTime = 0.0;
     }
 
     addPlayer(id: string) {
@@ -162,10 +164,16 @@ class Game {
     }
 
     run() {
-        this.lastScoreTime = (new Date()).getTime();
+        let time = (new Date()).getTime();
+        this.lastScoreTime = time;
+        this.lastUpdateTime = time;
         setInterval((game: Game) => {
 
-            game.update();
+            let time = (new Date()).getTime();
+            let dt = time - this.lastUpdateTime;
+            this.lastUpdateTime = time;
+
+            game.update(dt);
 
             io.to(String(this.id)).emit('state', game.getData());
         }, 1000 / 60, this);
@@ -226,14 +234,14 @@ class Game {
         this.updateTagger();
     }
 
-    update() {
+    update(dt: number) {
         for (let id in this.players) {
-            this.players[id].update();
+            this.players[id].update(dt);
         }
 
         if (this.running) {
             for (let i in this.powerUps) {
-                this.powerUps[i].update();
+                this.powerUps[i].update(dt);
                 if (this.powerUps[i].y >= height) {
                     this.powerUps.splice(Number(i), 1);
                 }
@@ -362,7 +370,7 @@ class Player extends Graphic {
     }
     
 
-    update() {
+    update(dt: number) {
 
         // Boundries
         if (this.y > 500 - this.height) {
@@ -391,11 +399,11 @@ class Player extends Graphic {
 
         // gravity
         if (!this.grounded) {
-            this.yspeed += gravity;
+            this.yspeed += gravity * dt;
         }
 
-        this.x += this.xspeed;
-        this.y += this.yspeed;
+        this.x += this.xspeed * dt;
+        this.y += this.yspeed * dt;
 
 
         // grounded
@@ -414,11 +422,11 @@ class Player extends Graphic {
             let top2 = platform.y;
             let bottom2 = platform.y + (platform.height);
 
-            if (((bottom1 < bottom2 + Math.abs(this.yspeed)) && (bottom1 >= top2) && (right1 > left2) && (left1 < right2))) {
+            if (((bottom1 < bottom2 + Math.abs(this.yspeed * dt)) && (bottom1 >= top2) && (right1 > left2) && (left1 < right2))) {
                 if (this.platformDown) {
                     this.yspeed = playerYSpeed;
                 } else {
-                    this.yspeed = top2 - bottom1;
+                    this.yspeed = (top2 - bottom1) / dt;
                     this.grounded = true;
                     this.wallTimeout = false;
                 }
@@ -530,9 +538,9 @@ class PowerUp extends Graphic {
         this.yspeed = 0.0;
     }
 
-    update() {
-        this.yspeed += gravity / 3;
-        this.y += this.yspeed;
+    update(dt: number) {
+        this.yspeed += gravity * dt / 4;
+        this.y += this.yspeed * dt;
     }
 }
 

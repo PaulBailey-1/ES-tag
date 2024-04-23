@@ -26,16 +26,16 @@ class TaggerBot:
                 evaderData = next(iter(playersData.values()))
 
                 self.frameLog.append(evaderData)
-                if (len(self.frameLog) > 10):
+                if (len(self.frameLog) > 1):
                     evaderData = self.frameLog.pop(0)
 
-                    if evaderData['x'] < agentData['x']:
+                    if evaderData['x'] + 30 < agentData['x']:
                         left = True
-                    elif evaderData['x'] > agentData['x']:
+                    elif evaderData['x'] > agentData['x'] + 30:
                         right = True
-                    if evaderData['y'] < agentData['y']:
+                    if evaderData['y'] + 30 < agentData['y']:
                         up = True
-                    elif evaderData['y'] > agentData['y']:
+                    elif evaderData['y'] > agentData['y'] + 30:
                         down = True
             
-            self.conn.move([up, down, left, right])
+                self.conn.move([up, down, left, right])

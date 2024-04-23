@@ -10,7 +10,7 @@ if (__name__ == "__main__"):
     bot = TaggerBot()
     while(True):
         bot.run()
-        time.sleep(0.01)
+        time.sleep(0.001)
         pass
 
     # # Create agents

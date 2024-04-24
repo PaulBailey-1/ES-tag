@@ -17,6 +17,9 @@ app.use('/static', express.static(__dirname + '/static'));
 app.get('/', function (request, response) {
     response.sendFile(path.join(__dirname, '/static/index.html'));
 });
+app.get('/view', function (request, response) {
+    response.sendFile(path.join(__dirname, '/static/view.html'));
+});
 
 interface ClientData {
     up: boolean,
@@ -51,7 +54,7 @@ const platforms = [];
 let games: Game[] = [];
 let connections: Connection[] = [];
 
-function joinGame(socketId: string) {
+function joinGame(socketId: string, watch: boolean = false) {
 
     if (games[connections[socketId].game] !== undefined && games[connections[socketId].game].players[socketId] !== undefined) {
         games[connections[socketId].game].removePlayer(socketId);
@@ -72,7 +75,9 @@ function joinGame(socketId: string) {
         games[gameId].run();
     }
     connections[socketId].game = gameId;
-    games[gameId].addPlayer(socketId);
+    if (!watch) {
+        games[gameId].addPlayer(socketId);
+    }
     connections[socketId].socket.emit('new game');
     connections[socketId].socket.join(String(gameId));
 }
@@ -83,12 +88,21 @@ server.listen(5000, function () {
 });
 
 io.on('connection', function (socket: Socket) {
+
     socket.on('new player', function () {
         connections[socket.id] = {
             socket: socket
         };
         joinGame(socket.id);
         console.log('Player connected');
+    });
+
+    socket.on('new watcher', function() {
+        connections[socket.id] = {
+            socket: socket
+        };
+        joinGame(socket.id, true);
+        console.log('Watcher connected');
     });
 
     socket.on('start', function () {

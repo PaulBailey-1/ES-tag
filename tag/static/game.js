@@ -1,3 +1,8 @@
+
+window.onerror = function(message, source, lineno, colno, error) {
+  alert(message);
+}
+
 const playerSize = 30;
 const platformWidth = 300;
 const platformHeight = 5;
@@ -84,11 +89,15 @@ document.addEventListener('keyup', function(event) {
   }
 });
 
-socket.emit('new player');
-
-setInterval(function() {
-  socket.emit('movement', movement);
-}, 1000 / 30);
+if (!viewing) {
+  socket.emit('new player');
+  
+  setInterval(function() {
+    socket.emit('movement', movement);
+  }, 1000 / 30);
+} else {
+  socket.emit('new watcher');
+}
 
 var canvas = document.getElementById('canvas');
 canvas.width = 1000;

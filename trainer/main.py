@@ -2,7 +2,7 @@
 from src.optimizer import Optimizer
 from src.game_connection import GameConnection
 from src.simple_agent import SimpleAgent
-from src.deep_agent import DeepAgent
+from src.deep_agent import DeepAgent, TaggerDeepAgent, EvaderDeepAgent
 
 import time
 
@@ -11,7 +11,7 @@ gameUrl = "http://localhost:5000"
 if (__name__ == "__main__"):
 
     simpleAgent = SimpleAgent(gameUrl)
-    deepAgent = DeepAgent(gameUrl)
+    deepAgent = TaggerDeepAgent(gameUrl)
     while(True):
         simpleAgent.run()
         deepAgent.run()

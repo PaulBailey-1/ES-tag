@@ -21,6 +21,7 @@ class GameConnection:
         self.updated = True
     
     def move(self, movement):
+        assert len(movement) == 4
         packet = {
             "up": movement[0],
             "down": movement[1],

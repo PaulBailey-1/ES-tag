@@ -5,11 +5,12 @@ from src.agent import Agent
 
 class DeepAgent(Agent):
 
-    def __init__(self, gameUrl, stateDim=3):
+    def __init__(self, gameUrl, stateDim=5):
         super().__init__(gameUrl)
 
         self.model = tf.keras.Sequential([
-            tf.keras.layers.Dense(units=10, activation='relu', input_shape=(stateDim,), kernel_initializer='random_normal', bias_initializer='zeros'),
+            tf.keras.Input(shape=(stateDim,)),
+            tf.keras.layers.Dense(units=10, activation='relu', kernel_initializer='random_normal', bias_initializer='zeros'),
             tf.keras.layers.Dense(units=10, activation='relu', kernel_initializer='random_normal', bias_initializer='zeros'),
             tf.keras.layers.Dense(units=4, activation='tanh', kernel_initializer='random_normal', bias_initializer='zeros'),
         ])
@@ -26,15 +27,12 @@ class DeepAgent(Agent):
         if len(playersData) > 0:
 
             state = self.reduceState(agentData, playersData, powerUpsData)
+            # state = [x / 1000 for x in state]
+            # print(state)
 
-            action = self.model.predict(np.array([state]), verbose=0)
-            print(action) # need to make shape flat list
-            # threshold at 0 for action
-            for i in range(len(action)):
-                if (action[i] > 0):
-                    action[i] = 1
-                else:
-                    action[i] = 0
+            rawAction = self.model.predict(np.array([state]), verbose=0)[0]
+            # print(rawAction)
+            action = [bool(x > 0) for x in rawAction]
             self.conn.move(action)
 
     def getParams(self):
@@ -61,15 +59,19 @@ class DeepAgent(Agent):
         state.append(500 - agentData['y'])
 
         # Distances to powerup
-        powerUp = powerUpsData[0]
-        state.append(powerUp['x'] - agentData['x'])
-        state.append(powerUp['y'] - agentData['y'])
+        if len(powerUpsData) > 0:
+            powerUp = powerUpsData[0]
+            state.append(powerUp['x'] - agentData['x'])
+            state.append(powerUp['y'] - agentData['y'])
+        else:
+            state.append(0) # This might work ...
+            state.append(0)
 
         return state
 
 class TaggerDeepAgent(DeepAgent):
     def __init__(self, gameUrl):
-        super.__init__(gameUrl, 7)
+        super().__init__(gameUrl, 7)
 
     def reduceState(self, agentData, playersData, powerUpsData):
         state = super().reduceState(agentData, playersData, powerUpsData)
@@ -90,7 +92,7 @@ class TaggerDeepAgent(DeepAgent):
 
 class EvaderDeepAgent(DeepAgent):
     def __init__(self, gameUrl):
-        super.__init__(gameUrl, 7)
+        super().__init__(gameUrl, 7)
 
     def reduceState(self, agentData, playersData, powerUpsData):
         state = super().reduceState(agentData, playersData, powerUpsData)

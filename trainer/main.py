@@ -2,6 +2,7 @@
 from src.optimizer import Optimizer
 from src.game_connection import GameConnection
 from src.simple_agent import SimpleAgent
+from src.deep_agent import DeepAgent
 
 import time
 
@@ -9,9 +10,11 @@ gameUrl = "http://localhost:5000"
 
 if (__name__ == "__main__"):
 
-    bot = SimpleAgent(gameUrl)
+    simpleAgent = SimpleAgent(gameUrl)
+    deepAgent = DeepAgent(gameUrl)
     while(True):
-        bot.run()
+        simpleAgent.run()
+        deepAgent.run()
         time.sleep(0.001)
         pass
 

@@ -29,3 +29,17 @@ class GameConnection:
             "right": movement[3]
         }
         self.socket.emit("movement", packet)
+
+    def joinGame(self):
+        self.socket.emit("join")
+
+    def restartGame(self):
+        self.socket.emit("restart")
+
+    def startGame(self, tagger=False):
+        if (tagger):
+            self.socket.emit("start tagger")
+            print("Started game as tagger")
+        else:
+            self.socket.emit("start")
+            print("Started game")

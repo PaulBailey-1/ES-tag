@@ -1,3 +1,4 @@
+import { isNull } from "lodash";
 import { Socket } from "socket.io";
 
 // Dependencies
@@ -10,7 +11,12 @@ let app = express();
 let server = http.Server(app);
 let io = socketIO(server);
 
-app.set('port', 5000);
+let port = 5000
+if (process.argv.length > 2) {
+    port = parseInt(process.argv[2]);
+}
+
+app.set('port', port);
 app.use('/static', express.static(__dirname + '/static'));
 
 // Routing
@@ -58,9 +64,12 @@ function joinGame(socketId: string, watch: boolean = false) {
 
     if (games[connections[socketId].game] !== undefined && games[connections[socketId].game].players[socketId] !== undefined) {
         games[connections[socketId].game].removePlayer(socketId);
+        if (games[connections[socketId].game].playerCount == 0) {
+            games[connections[socketId].game].restart();
+        }
     }
     let gameId  = -1;
-    let highestPlayerCount = 0;
+    let highestPlayerCount = -1;
     for (let i in games) {
         if (!games[i].running) {
             if (games[i].playerCount > highestPlayerCount) {
@@ -68,6 +77,9 @@ function joinGame(socketId: string, watch: boolean = false) {
                 highestPlayerCount = games[i].playerCount;
             }
         }
+    }
+    if (watch) {
+        gameId = 0;
     }
     if (gameId === -1) {
         gameId = games.length;
@@ -77,14 +89,17 @@ function joinGame(socketId: string, watch: boolean = false) {
     connections[socketId].game = gameId;
     if (!watch) {
         games[gameId].addPlayer(socketId);
+        console.log('Player ' + socketId + ' connected to game ' + gameId);
+    } else {
+        console.log('Watcher connected to game ' + gameId);
     }
     connections[socketId].socket.emit('new game');
     connections[socketId].socket.join(String(gameId));
 }
 
 // Starts the server.
-server.listen(5000, function () {
-    console.log('Starting server on port 5000');
+server.listen(port, function () {
+    console.log('Starting server on port ' + port.toString());
 });
 
 io.on('connection', function (socket: Socket) {
@@ -94,7 +109,6 @@ io.on('connection', function (socket: Socket) {
             socket: socket
         };
         joinGame(socket.id);
-        console.log('Player connected');
     });
 
     socket.on('new watcher', function() {
@@ -102,11 +116,19 @@ io.on('connection', function (socket: Socket) {
             socket: socket
         };
         joinGame(socket.id, true);
-        console.log('Watcher connected');
     });
 
     socket.on('start', function () {
         games[connections[socket.id].game].startGame();
+    });
+
+    socket.on('start tagger', function () {
+        games[connections[socket.id].game].startGame(socket.id);
+    });
+
+    socket.on('restart', function () {
+        console.log("Restarting game " + connections[socket.id].game);
+        games[connections[socket.id].game].restart();
     });
 
     socket.on('join', function () {
@@ -123,6 +145,9 @@ io.on('connection', function (socket: Socket) {
     socket.on('disconnect', function () {
         if (connections[socket.id] !== undefined) {
             games[connections[socket.id].game].removePlayer(socket.id);
+            if (games[connections[socket.id].game].playerCount == 0) {
+                games[connections[socket.id].game].restart();
+            }
             console.log('Player Disconnected');
         }
     });
@@ -239,13 +264,18 @@ class Game {
         }
         if (i == 1) {
             winner.win = true;
-            this.restart();
+            setTimeout(() => this.restart(), 3000);
         }
     }
     
-    startGame() {
+    startGame(taggerId = null) {
         this.running = true;
-        this.updateTagger();
+        if (taggerId == null) {
+            this.updateTagger();
+        } else {
+            this.players[taggerId].status = true;
+        }
+        console.log("Started game " + this.id);
     }
 
     update(dt: number) {
@@ -311,22 +341,20 @@ class Game {
     }
 
     restart() {
-        setTimeout(() => {
-            let playerIds = [];
-            for (let i in this.players) {
-                playerIds[i] = this.players[i].id;
-            }
-            this.running = false;
-            this.players = [];
-            this.playerCount = 0;
-            this.powerUps = [];
-            this.powerUpCounter = powerUpTime;
+        let playerIds = [];
+        for (let i in this.players) {
+            playerIds[i] = this.players[i].id;
+        }
+        this.running = false;
+        this.players = [];
+        this.playerCount = 0;
+        this.powerUps = [];
+        this.powerUpCounter = powerUpTime;
 
-            for (let id in playerIds) {
-                connections[id].socket.leave(String(this.id));
-                joinGame(id);
-            }
-        }, 3000);
+        for (let id in playerIds) {
+            connections[id].socket.leave(String(this.id));
+            joinGame(id);
+        }
     }
 }
 

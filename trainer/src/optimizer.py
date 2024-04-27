@@ -20,7 +20,7 @@ class Optimizer:
         noise = rng.normal(size=self.n)
         self.noise_table.append(noise)
         params = self.params + self.sigma * noise
-        return params, len(self.noise_table) - 1
+        return params #, len(self.noise_table) - 1
 
     def update(self, rewards):
         sorting = np.array(rewards).argsort()[::-1][:self.mu]

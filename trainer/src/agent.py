@@ -4,7 +4,7 @@ FRAME_LAG = 2
 class Agent:
     def __init__(self, gameUrl):
         self.conn = GameConnection(gameUrl)
-        self.frameLog = []
+        self.reset()
         
     def run(self):
 
@@ -17,12 +17,19 @@ class Agent:
             playersData.pop(self.conn.socket.get_sid())
             powerUpsData = self.conn.state["powerUpData"]
 
-            self.frameLog.append((agentData, playersData, powerUpsData))
+            if (self.ignoreCount > 0):
+                self.ignoreCount -= 1
+            else:
+                self.frameLog.append((agentData, playersData, powerUpsData))
+
             if (len(self.frameLog) > FRAME_LAG):
                 data = self.frameLog.pop(0)
                 agentData = data[0]
                 playersData = data[1]
                 powerUpsData = data[2]
+
+                self.isRed = agentData['color'] == 'red'
+                self.score = agentData['score']
 
                 action = self.policy(agentData, playersData, powerUpsData)
                 if (action):
@@ -30,3 +37,11 @@ class Agent:
 
     def policy(self, agentData, playersData, powerUpsData):
         return None
+    
+    def reset(self):
+
+        self.frameLog = []
+        self.ignoreCount = 3
+
+        self.isRed = True
+        self.score = -1

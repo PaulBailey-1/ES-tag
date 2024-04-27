@@ -1,3 +1,5 @@
+import os
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '1' 
 import tensorflow as tf
 import numpy as np
 
@@ -34,6 +36,9 @@ class DeepAgent(Agent):
             # print(rawAction)
             action = [bool(x > 0) for x in rawAction]
             self.conn.move(action)
+
+    def getParamCount(self):
+        return self.model.count_params()
 
     def getParams(self):
         self.params = np.concatenate([weights.flatten() for weights in self.model.get_weights()])

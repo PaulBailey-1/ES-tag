@@ -1,0 +1,10 @@
+services:
+  game-server:
+    container_name: tag-server
+    build: ./tag
+    ports:
+      - "5000:5000"
+  trainer:
+    container_name: tag-trainer
+    build: ./trainer
+  

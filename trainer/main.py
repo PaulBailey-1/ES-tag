@@ -3,6 +3,7 @@ from src.simple_agent import SimpleAgent
 from src.deep_agent import DeepAgent, TaggerDeepAgent, EvaderDeepAgent
 
 import time
+import sys
 import numpy as np
 from mpi4py import MPI
 
@@ -11,7 +12,7 @@ comm.Set_errhandler(MPI.ERRORS_RETURN)
 rank = comm.Get_rank()
 workersCount = comm.Get_size()
 
-gameUrl = "http://localhost:500" + str(rank)
+gameUrl = "http://localhost:5000"
 testTime = 10
 
 logfile = None
@@ -21,6 +22,9 @@ def log(msg):
     logFile.close()
 
 if (__name__ == "__main__"):
+
+    if len(sys.argv) > 1:
+        gameUrl = sys.argv[1]
 
     print(f"Started process {rank} on {MPI.Get_processor_name()}")
 

@@ -1,0 +1,4 @@
+.venv
+log.txt
+test.py
+src/__pycache__

@@ -8,9 +8,9 @@ class Optimizer:
         self.params = params
         self.n = len(params)
         # self.mu = lamb / 7
-        self.mu = 2
+        self.mu = 1
         self.lamb = lamb
-        self.sigma = 0.001
+        self.sigma = 0.01
 
         self.noise_table = []
         self.w = np.array([np.log(self.mu + 0.5) - np.log(i) for i in range(1, self.mu + 1)])

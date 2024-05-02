@@ -39,7 +39,7 @@ class GameConnection:
     def startGame(self, tagger=False):
         if (tagger):
             self.socket.emit("start tagger")
-            print("Started game as tagger")
+            # print("Started game as tagger")
         else:
             self.socket.emit("start")
-            print("Started game")
+            # print("Started game")

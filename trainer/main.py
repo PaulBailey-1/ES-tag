@@ -4,6 +4,7 @@ from src.deep_agent import DeepAgent, TaggerDeepAgent, EvaderDeepAgent
 
 import time
 import sys
+import os
 import numpy as np
 from mpi4py import MPI
 
@@ -13,7 +14,7 @@ rank = comm.Get_rank()
 workersCount = comm.Get_size()
 
 gameUrl = "http://localhost:5000"
-testTime = 10
+testTime = 5
 
 logfile = None
 def log(msg):
@@ -23,8 +24,14 @@ def log(msg):
 
 if (__name__ == "__main__"):
 
+    envGameUrl = os.environ.get('GAME_SERVER_URL')
+    if envGameUrl != None:
+        gameUrl = envGameUrl
+
     if len(sys.argv) > 1:
         gameUrl = sys.argv[1]
+
+    gameUrl = gameUrl.replace("RANK", str(rank))
 
     print(f"Started process {rank} on {MPI.Get_processor_name()}")
 
@@ -43,17 +50,13 @@ if (__name__ == "__main__"):
         
         # Set the starting parameters
         optimizer = Optimizer(deepAgent.getParams(), workersCount)
-        generation = 0
-        print("Initilized optimizer")
+        print("Initialized optimizer")
 
     while True:
 
         # Rollout new params
         paramSendBuf = None
         if rank == 0:
-
-            # print('Generation ', generation)
-            log(f"Generation {str(generation)}")
 
             paramSendBuf = np.empty([workersCount, paramCount], dtype='f')
             paramSendBuf[:] = [optimizer.getParams() for _ in range(workersCount)]
@@ -78,9 +81,8 @@ if (__name__ == "__main__"):
             
             time.sleep(0.001)
 
-        reward = deepAgent.score - 60 + testTime
         rewardSendbuf = np.empty([1], dtype='i')
-        rewardSendbuf[0] = reward
+        rewardSendbuf[0] = deepAgent.score
 
         rewardRecvBuf = None
         if rank == 0:
@@ -89,19 +91,4 @@ if (__name__ == "__main__"):
         comm.Gather(rewardSendbuf, rewardRecvBuf, root=0)
 
         if rank == 0:
-            
-            # Optimize
-            rewards = rewardRecvBuf
-            # print(rewards)
-            log(f"Rewards: {rewards}")
-            
-            mr = 0
-            m = 0
-            for i in range(len(rewards)):
-                if rewards[i] > mr:
-                    mr = rewards[i]
-                    r = i
-
-            optimizer.update(rewards)
-
-            generation += 1
+            optimizer.update(rewardRecvBuf)

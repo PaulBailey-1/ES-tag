@@ -1,7 +1,7 @@
 **/node_modules/
 **/build/
 .vscode/
+logs/
 **/__pycache__/
 **/.venv/
-*.sh
 **log.txt

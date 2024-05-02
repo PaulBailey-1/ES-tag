@@ -1,10 +1,32 @@
 services:
-  game-server:
-    container_name: tag-server
+  game-server-0:
+    container_name: tag-server-0
     build: ./tag
     ports:
       - "5000:5000"
-  trainer:
-    container_name: tag-trainer
+  trainer-0:
+    container_name: tag-trainer-0
     build: ./trainer
+    environment:
+      - AWS_BATCH_JOB_MAIN_NODE_INDEX=0
+      - AWS_BATCH_JOB_MAIN_NODE_PRIVATE_IPV4_ADDRESS=trainer-0
+      - AWS_BATCH_JOB_NODE_INDEX=0
+      - AWS_BATCH_JOB_NUM_NODES=1
+    volumes:
+      - type: bind
+        source: ./logs
+        target: /app/logs
+  # game-server-1:
+  #   container_name: tag-server-1
+  #   build: ./tag
+  #   ports:
+  #     - "5001:5000"
+  # trainer-1:
+  #   container_name: tag-trainer-1
+  #   build: ./trainer
+  #   environment:
+  #     - AWS_BATCH_JOB_MAIN_NODE_INDEX=0
+  #     - AWS_BATCH_JOB_MAIN_NODE_PRIVATE_IPV4_ADDRESS=trainer-0
+  #     - AWS_BATCH_JOB_NODE_INDEX=1
+  #     - AWS_BATCH_JOB_NUM_NODES=2
   

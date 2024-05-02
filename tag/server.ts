@@ -144,7 +144,9 @@ io.on('connection', function (socket: Socket) {
 
     socket.on('disconnect', function () {
         if (connections[socket.id] !== undefined) {
-            games[connections[socket.id].game].removePlayer(socket.id);
+            if (games[connections[socket.id].game] != null) {
+                games[connections[socket.id].game].removePlayer(socket.id);
+            }
             if (games[connections[socket.id].game].playerCount == 0) {
                 games[connections[socket.id].game].restart();
             }

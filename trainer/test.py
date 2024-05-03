@@ -1,6 +1,4 @@
-from src.optimizer import Optimizer
 from src.simple_agent import SimpleAgent
-from src.deep_agent import DeepAgent, TaggerDeepAgent, EvaderDeepAgent
 
 import time
 import numpy as np
@@ -10,22 +8,9 @@ testTime = 10
 
 if (__name__ == "__main__"):
 
-    # # Create agents
-    # simpleAgent = SimpleAgent(gameUrl)
-    # deepAgent = TaggerDeepAgent(gameUrl)
+    # Create agents
+    simpleAgents = [SimpleAgent(gameUrl) for _ in range(5)]
 
-    # # Run agents
-    # deepAgent.conn.restartGame()
-    # deepAgent.conn.startGame(True)
-
-    # while(True):
-    #     simpleAgent.run()
-    #     deepAgent.run()
-    #     time.sleep(0.001)
-    #     print(deepAgent.isRed)
-
-    f = open("log.txt", "w")
-    while (True):
-        f.write("hi there\n")
-        time.sleep(1)
-    # f.close()
+    while(True):
+        for simpleAgent in simpleAgents : simpleAgent.run()
+        time.sleep(0.001)

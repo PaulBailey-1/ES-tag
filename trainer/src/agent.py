@@ -2,7 +2,9 @@ from src.game_connection import GameConnection
 
 FRAME_LAG = 2
 class Agent:
-    def __init__(self, gameUrl):
+    def __init__(self, gameUrl, config=None):
+        if config != None:
+            FRAME_LAG = config['frameLag']
         self.conn = GameConnection(gameUrl)
         self.reset()
         

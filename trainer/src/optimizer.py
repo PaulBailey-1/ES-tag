@@ -9,23 +9,26 @@ rng = np.random.default_rng()
 
 class Optimizer:
 
-    def __init__(self, params, lamb):
+    def __init__(self, params, lamb, logDir, config=None):
         self.params = params
         self.n = len(params)
         # self.mu = lamb / 7
-        self.mu = 1
         self.lamb = lamb
+        self.mu = 1
         self.sigma = 0.01
+
+        if config:
+            self.mu = config['mu']
+            self.sigma = config['sigma']
 
         self.noise_table = []
         self.w = np.array([np.log(self.mu + 0.5) - np.log(i) for i in range(1, self.mu + 1)])
         self.w /= np.sum(self.w)
 
-        self.generation = 0
-
-        logdir = "logs/" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
-        self.log_writer = tf.summary.create_file_writer(logdir + "/evolution")
+        self.log_writer = tf.summary.create_file_writer(logDir + "/evolution")
         self.log_writer.set_as_default()
+
+        print(f"Initialized optimizer mu:{self.mu} sigma:{self.sigma}")
 
     def getParams(self):
         noise = rng.normal(size=self.n)
@@ -33,7 +36,7 @@ class Optimizer:
         params = self.params + self.sigma * noise
         return params #, len(self.noise_table) - 1
 
-    def update(self, rewards):
+    def update(self, generation, rewards):
         sorting = np.array(rewards).argsort()[::-1][:self.mu]
         step = np.zeros(self.n)
         for i in range(self.mu):
@@ -42,7 +45,4 @@ class Optimizer:
         self.params += step
         self.noise_table.clear()
 
-        print("Generation ", self.generation)
-        tf.summary.scalar('top reward', data=rewards[sorting[0]], step=self.generation)
-
-        self.generation += 1
+        tf.summary.scalar('top reward', data=rewards[sorting[0]], step=generation)

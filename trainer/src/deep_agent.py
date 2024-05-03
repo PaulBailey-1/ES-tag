@@ -7,15 +7,30 @@ from src.agent import Agent
 
 class DeepAgent(Agent):
 
-    def __init__(self, gameUrl, stateDim=5):
-        super().__init__(gameUrl)
+    def __init__(self, gameUrl, stateDim=5, config=None, modelPath=None):
+        super().__init__(gameUrl, config)
 
-        self.model = tf.keras.Sequential([
-            tf.keras.Input(shape=(stateDim,)),
-            tf.keras.layers.Dense(units=10, activation='relu', kernel_initializer='random_normal', bias_initializer='zeros'),
-            tf.keras.layers.Dense(units=10, activation='relu', kernel_initializer='random_normal', bias_initializer='zeros'),
-            tf.keras.layers.Dense(units=4, activation='tanh', kernel_initializer='random_normal', bias_initializer='zeros'),
-        ])
+        if modelPath:
+            self.model = tf.keras.models.load_model(modelPath)
+        else:
+            # Build neural network model
+            hiddenLayers = 2
+            hiddenLayerDim = 10 
+            hiddenNonlin =  "relu"
+            initialSigma =  0.05
+            if (config):
+                networkConfig = config['network']
+                hiddenLayers = networkConfig['hiddenLayers']
+                hiddenLayerDim = networkConfig['hiddenLayerDim']
+                hiddenNonlin = networkConfig['hiddenNonlin']
+                initialSigma = networkConfig['initialSigma']
+
+            kernelInit = tf.keras.RandomNormal(mean=0.0, stddev=initialSigma)
+            self.model = tf.keras.Sequential([
+                tf.keras.Input(shape=(stateDim,))] +
+                [tf.keras.layers.Dense(units=hiddenLayerDim, activation=hiddenNonlin, kernel_initializer=kernelInit, bias_initializer='zeros') for _ in range(hiddenLayers)] + [
+                tf.keras.layers.Dense(units=4, activation='tanh', kernel_initializer=kernelInit, bias_initializer='zeros'),
+            ])
         # self.model.summary()
 
         self.params = np.concatenate([weights.flatten() for weights in self.model.get_weights()])
@@ -74,9 +89,13 @@ class DeepAgent(Agent):
 
         return state
 
+    def save(self, dir):
+        self.model.save(dir + '/deepAgentModel.keras')
+
 class TaggerDeepAgent(DeepAgent):
-    def __init__(self, gameUrl):
-        super().__init__(gameUrl, 7)
+    def __init__(self, gameUrl, config=None, modelPath=None):
+        super().__init__(gameUrl, stateDim=7, config=config, modelPath=modelPath)
+        print("Created Tagger Deep Agent")
 
     def reduceState(self, agentData, playersData, powerUpsData):
         state = super().reduceState(agentData, playersData, powerUpsData)
@@ -96,8 +115,9 @@ class TaggerDeepAgent(DeepAgent):
         return state
 
 class EvaderDeepAgent(DeepAgent):
-    def __init__(self, gameUrl):
-        super().__init__(gameUrl, 7)
+    def __init__(self, gameUrl, config=None, modelPath=None):
+        super().__init__(gameUrl, stateDim=7, config=config, modelPath=modelPath)
+        print("Created Evader Deep Agent")
 
     def reduceState(self, agentData, playersData, powerUpsData):
         state = super().reduceState(agentData, playersData, powerUpsData)

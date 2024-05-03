@@ -1,0 +1,18 @@
+{
+    "optimizer": {
+      "sigma": 0.01,
+      "mu": 10
+    },
+    "rl": {
+      "testTime": 5
+    },
+    "agent": {
+      "frameLag": 2,
+      "network" : {
+        "hiddenLayers": 2,
+        "hiddenLayerDim": 10,
+        "hiddenNonlin": "relu",
+        "initialSigma": 0.05
+      }
+    }
+  }

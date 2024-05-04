@@ -1,75 +1,28 @@
-import os
-os.environ['TF_CPP_MIN_LOG_LEVEL'] = '1' 
-import tensorflow as tf
+
 import numpy as np
 
 from src.agent import Agent
+from src.agent_model import AgentModel
 
 class DeepAgent(Agent):
 
     def __init__(self, gameUrl, stateDim=5, config=None, modelPath=None):
         super().__init__(gameUrl, config)
-
-        if modelPath:
-            self.model = tf.keras.models.load_model(modelPath)
-        else:
-            # Build neural network model
-            hiddenLayers = 2
-            hiddenLayerDim = 10 
-            hiddenNonlin =  "relu"
-            initialSigma =  0.05
-            if (config):
-                networkConfig = config['network']
-                hiddenLayers = networkConfig['hiddenLayers']
-                hiddenLayerDim = networkConfig['hiddenLayerDim']
-                hiddenNonlin = networkConfig['hiddenNonlin']
-                initialSigma = networkConfig['initialSigma']
-
-            kernelInit = tf.keras.RandomNormal(mean=0.0, stddev=initialSigma)
-            self.model = tf.keras.Sequential([
-                tf.keras.Input(shape=(stateDim,))] +
-                [tf.keras.layers.Dense(units=hiddenLayerDim, activation=hiddenNonlin, kernel_initializer=kernelInit, bias_initializer='zeros') for _ in range(hiddenLayers)] + [
-                tf.keras.layers.Dense(units=4, activation='tanh', kernel_initializer=kernelInit, bias_initializer='zeros'),
-            ])
-        # self.model.summary()
-
-        self.params = np.concatenate([weights.flatten() for weights in self.model.get_weights()])
-
-         # Calculate the split points for weights and biases
-        self.layer_shapes = [arr.shape for arr in self.model.get_weights()]
-        self.split_points = np.cumsum([np.prod(shape) for shape in self.layer_shapes[:-1]])
+        self.activeModel = AgentModel(stateDim, config=config['network'], modelPath=modelPath)
 
     def policy(self, agentData, playersData, powerUpsData):
 
         if len(playersData) > 0:
-
             state = self.reduceState(agentData, playersData, powerUpsData)
-            # state = [x / 1000 for x in state]
-            # print(state)
 
-            rawAction = self.model.predict(np.array([state]), verbose=0)[0]
-            # print(rawAction)
+            rawAction = self.activeModel.predict(np.array([state]), verbose=0)[0]
             action = [bool(x > 0) for x in rawAction]
             self.conn.move(action)
 
-    def getParamCount(self):
-        return self.model.count_params()
-
-    def getParams(self):
-        self.params = np.concatenate([weights.flatten() for weights in self.model.get_weights()])
-        return self.params
-
-    def setParams(self, params):
-        # Split the flat array into weights and biases
-        weights_biases = np.split(params, self.split_points)
-
-        # Reshape weights and biases to match the shapes in the model
-        reshaped_weights_biases = [arr.reshape(shape) for arr, shape in zip(weights_biases, self.layer_shapes)]
-
-        # Set the weights and biases in the model
-        self.model.set_weights(reshaped_weights_biases)
-    
     def reduceState(self, agentData, playersData, powerUpsData):
+        return self.basicReduceState(agentData, playersData, powerUpsData)
+    
+    def basicReduceState(self, agentData, playersData, powerUpsData):
 
         # Distance to walls and floor
         state = []
@@ -89,8 +42,7 @@ class DeepAgent(Agent):
 
         return state
 
-    def save(self, dir):
-        self.model.save(dir + '/deepAgentModel.keras')
+    
 
 class TaggerDeepAgent(DeepAgent):
     def __init__(self, gameUrl, config=None, modelPath=None):
@@ -98,9 +50,12 @@ class TaggerDeepAgent(DeepAgent):
         print("Created Tagger Deep Agent")
 
     def reduceState(self, agentData, playersData, powerUpsData):
-        state = super().reduceState(agentData, playersData, powerUpsData)
+        return self.basicReduceState(agentData, playersData, powerUpsData) + \
+            self.taggerReduceState(agentData, playersData, powerUpsData)
 
+    def taggerReduceState(self, agentData, playersData, powerUpsData):
         # Distances to closest player
+        state = []
         leastXDist = 10000
         closestPlayer = None
         for playerId in playersData:
@@ -120,9 +75,12 @@ class EvaderDeepAgent(DeepAgent):
         print("Created Evader Deep Agent")
 
     def reduceState(self, agentData, playersData, powerUpsData):
-        state = super().reduceState(agentData, playersData, powerUpsData)
+        return self.basicReduceState(agentData, playersData, powerUpsData) + \
+            self.evaderReduceState(agentData, playersData, powerUpsData)
 
+    def evaderReduceState(self, agentData, playersData, powerUpsData):
         # Distances to tagger
+        state = []
         tagger = None
         for player in playersData:
             if playersData[player]['color'] == 'red':
@@ -132,3 +90,25 @@ class EvaderDeepAgent(DeepAgent):
         state.append(tagger['y'] - agentData['y'])
 
         return state
+
+class FullDeepAgent(TaggerDeepAgent, EvaderDeepAgent):
+    def __init__(self, gameUrl, config=None, taggerModelPath=None, evaderModelPath=None):
+        Agent.__init__(self, gameUrl, config)
+
+        self.taggerModel = AgentModel(9, config=config['network'], modelPath=taggerModelPath)
+        self.evaderModel = AgentModel(9, config=config['network'], modelPath=evaderModelPath)
+
+        print("Created Full Deep Agent")
+
+    def reduceState(self, agentData, playersData, powerUpsData):
+        return self.basicReduceState(agentData, playersData, powerUpsData) + \
+            self.evaderReduceState(agentData, playersData, powerUpsData)
+
+    def policy(self, agentData, playersData, powerUpsData):
+
+        if agentData['color'] == 'red':
+            self.activeModel = self.taggerModel
+        else:
+            self.activeModel = self.evaderModel
+
+        super().policy(agentData, playersData, powerUpsData)

@@ -1,9 +1,10 @@
 from src.optimizer import Optimizer
 from src.simple_agent import SimpleAgent
-from src.deep_agent import DeepAgent, TaggerDeepAgent, EvaderDeepAgent
+from src.deep_agent import TaggerDeepAgent, EvaderDeepAgent, FullDeepAgent
 
 import time
 import datetime
+import json
 import numpy as np
 from mpi4py import MPI
 from argparse import ArgumentParser
@@ -15,7 +16,7 @@ workersCount = comm.Get_size()
 
 testTime = 5
 
-def main(gameUrl, config, runName, modelPath, agentType):
+def main(gameUrl, config, runName, modelPath, secondModelPath, agentType):
 
     # gameUrl = gameUrl.replace("RANK", str(rank))
     paramCount = None
@@ -31,8 +32,14 @@ def main(gameUrl, config, runName, modelPath, agentType):
     agentType = TaggerDeepAgent
     if agentType == 'evader':
         agentType = EvaderDeepAgent
+    elif agentType == 'full':
+        agentType = FullDeepAgent
 
-    deepAgent = agentType(gameUrl, config=config['agent'], modelPath=modelPath)
+    if agentType == FullDeepAgent:
+        deepAgent = agentType(gameUrl, config=config['agent'], taggerModelPath=modelPath, evaderModelPath=secondModelPath)
+    else:
+        deepAgent = agentType(gameUrl, config=config['agent'], modelPath=modelPath)
+
     simpleAgent = SimpleAgent(gameUrl, config=config['agent'])
     paramCount = deepAgent.getParamCount()
 
@@ -100,7 +107,13 @@ if (__name__ == "__main__"):
     parser.add_argument('-c', '--config_file', help='Path to configuration file', type=str)
     parser.add_argument('-r', '--run_name', help='Name of the run, used to create log folder name', type=str)
     parser.add_argument('-m', '--model_path', help='Path to keras model to use for a deep agent', type=str)
+    parser.add_argument('-s', '--second_model_path', help='Path to second keras model to use for a deep agent', type=str)
     parser.add_argument('-a', '--agent_type', help='Type of agent to train (tagger, evader, full)', type=str, default="tagger")
     args = parser.parse_args()
 
-    main(args.game_url, args.config_file, args.run_name, args.model_path, args.agent_type)
+    if args.config_file:
+        with open(args.config_file, 'r') as f:
+            config = json.loads(f.read())
+            print("Read config from ", args.config_file)
+
+    main(args.game_url, config, args.run_name, args.model_path, args.second_model_path, args.agent_type)

@@ -1,4 +1,5 @@
 from src.simple_agent import SimpleAgent
+from src.deep_agent import FullDeepAgent
 
 import time
 import numpy as np
@@ -9,8 +10,8 @@ testTime = 10
 if (__name__ == "__main__"):
 
     # Create agents
-    simpleAgents = [SimpleAgent(gameUrl) for _ in range(5)]
+    deepAgent = FullDeepAgent(gameUrl)
 
     while(True):
-        for simpleAgent in simpleAgents : simpleAgent.run()
+        deepAgent.run()
         time.sleep(0.001)

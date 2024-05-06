@@ -16,7 +16,7 @@ workersCount = comm.Get_size()
 
 testTime = 5
 
-def main(gameUrl, config, runName, modelPath, secondModelPath, agentType):
+def main(gameUrl, config, runName, modelPath, secondModelPath, agentTypeS):
 
     # gameUrl = gameUrl.replace("RANK", str(rank))
     paramCount = None
@@ -25,14 +25,15 @@ def main(gameUrl, config, runName, modelPath, secondModelPath, agentType):
     logDir = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
     if runName:
         logDir = runName + '-' + logDir
+    logDir = 'logs/' + logDir
 
     print(f"Started trainer process {rank} on {MPI.Get_processor_name()}")
 
     # Create agents
     agentType = TaggerDeepAgent
-    if agentType == 'evader':
+    if agentTypeS == 'evader':
         agentType = EvaderDeepAgent
-    elif agentType == 'full':
+    elif agentTypeS == 'full':
         agentType = FullDeepAgent
 
     if agentType == FullDeepAgent:
@@ -41,7 +42,7 @@ def main(gameUrl, config, runName, modelPath, secondModelPath, agentType):
         deepAgent = agentType(gameUrl, config=config['agent'], modelPath=modelPath)
 
     simpleAgent = SimpleAgent(gameUrl, config=config['agent'])
-    paramCount = deepAgent.getParamCount()
+    paramCount = deepAgent.activeModel.getParamCount()
 
     print(f"Process {rank}: created agents")
     
@@ -50,7 +51,7 @@ def main(gameUrl, config, runName, modelPath, secondModelPath, agentType):
         print(f"Beginning training with {workersCount} workers")
         generation = 0
         # Set the starting parameters
-        optimizer = Optimizer(deepAgent.getParams(), workersCount, logDir, config=config['optimizer'])
+        optimizer = Optimizer(deepAgent.activeModel.getParams(), workersCount, logDir, config=config['optimizer'])
 
     while True:
 
@@ -69,7 +70,13 @@ def main(gameUrl, config, runName, modelPath, secondModelPath, agentType):
         simpleAgent.reset()
         
         deepAgent.conn.restartGame()
-        deepAgent.conn.startGame(True)
+
+        if agentType == TaggerDeepAgent:
+            deepAgent.conn.startGame(True)
+        elif agentType == EvaderDeepAgent:
+            simpleAgent.conn.startGame(True)
+        else:
+            deepAgent.conn.startGame()
 
         while(True):
             simpleAgent.run()

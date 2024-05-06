@@ -9,7 +9,7 @@ class GameConnection:
         self.socket.on("disconnect", lambda : print("Disconnected"))
         self.socket.on("state", self._updateState)
 
-        print(f"Connecting to {url} ... ", end=None)
+        print(f"Connecting to {url} ... ", end="")
         self.socket.connect(url)
         self.socket.emit("new player")
 

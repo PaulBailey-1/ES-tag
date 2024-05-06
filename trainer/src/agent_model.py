@@ -20,7 +20,7 @@ class AgentModel():
                 hiddenNonlin = config['hiddenNonlin']
                 initialSigma = config['initialSigma']
 
-            kernelInit = tf.keras.RandomNormal(mean=0.0, stddev=initialSigma)
+            kernelInit = tf.keras.initializers.RandomNormal(mean=0.0, stddev=initialSigma)
             self.model = tf.keras.Sequential([
                 tf.keras.Input(shape=(inputDim,))] +
                 [tf.keras.layers.Dense(units=hiddenLayerDim, activation=hiddenNonlin, kernel_initializer=kernelInit, bias_initializer='zeros') for _ in range(hiddenLayers)] + [

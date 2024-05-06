@@ -20,6 +20,8 @@ class Optimizer:
         if config:
             self.mu = config['mu']
             self.sigma = config['sigma']
+            if self.mu > self.lamb:
+                print("Error: Parent population cannot be larger than total population")
 
         self.noise_table = []
         self.w = np.array([np.log(self.mu + 0.5) - np.log(i) for i in range(1, self.mu + 1)])
@@ -28,7 +30,7 @@ class Optimizer:
         self.log_writer = tf.summary.create_file_writer(logDir + "/evolution")
         self.log_writer.set_as_default()
 
-        print(f"Initialized optimizer mu:{self.mu} sigma:{self.sigma}")
+        print(f"Initialized optimizer mu: {self.mu} sigma: {self.sigma}")
 
     def getParams(self):
         noise = rng.normal(size=self.n)

@@ -12,17 +12,22 @@ class DeepAgent(Agent):
 
     def policy(self, agentData, playersData, powerUpsData):
 
-        if len(playersData) > 0:
-            state = self.reduceState(agentData, playersData, powerUpsData)
+        taggerData = None
+        for player in playersData:
+            if playersData[player]['color'] == 'red':
+                taggerData = playersData[player]
 
-            rawAction = self.activeModel.predict(np.array([state]), verbose=0)[0]
+        if len(playersData) > 0 and taggerData != None:
+            state = self.reduceState(agentData, taggerData, playersData, powerUpsData)
+
+            rawAction = self.activeModel.model.predict(np.array([state]), verbose=0)[0]
             action = [bool(x > 0) for x in rawAction]
             self.conn.move(action)
 
-    def reduceState(self, agentData, playersData, powerUpsData):
-        return self.basicReduceState(agentData, playersData, powerUpsData)
+    def reduceState(self, agentData, taggerData, playersData, powerUpsData):
+        return self.basicReduceState(agentData, taggerData, playersData, powerUpsData)
     
-    def basicReduceState(self, agentData, playersData, powerUpsData):
+    def basicReduceState(self, agentData, taggerData, playersData, powerUpsData):
 
         # Distance to walls and floor
         state = []
@@ -42,18 +47,19 @@ class DeepAgent(Agent):
 
         return state
 
-    
+    def save(self, dir):
+        self.activeModel.model.save(dir + '/deepAgentModel.keras')
 
 class TaggerDeepAgent(DeepAgent):
     def __init__(self, gameUrl, config=None, modelPath=None):
         super().__init__(gameUrl, stateDim=7, config=config, modelPath=modelPath)
         print("Created Tagger Deep Agent")
 
-    def reduceState(self, agentData, playersData, powerUpsData):
-        return self.basicReduceState(agentData, playersData, powerUpsData) + \
-            self.taggerReduceState(agentData, playersData, powerUpsData)
+    def reduceState(self, agentData, taggerData, playersData, powerUpsData):
+        return self.basicReduceState(agentData, taggerData, playersData, powerUpsData) + \
+            self.taggerReduceState(agentData, taggerData, playersData, powerUpsData)
 
-    def taggerReduceState(self, agentData, playersData, powerUpsData):
+    def taggerReduceState(self, agentData, taggerData, playersData, powerUpsData):
         # Distances to closest player
         state = []
         leastXDist = 10000
@@ -68,41 +74,49 @@ class TaggerDeepAgent(DeepAgent):
         state.append(closestPlayer['y'] - agentData['y'])
 
         return state
+    
+    def save(self, dir):
+        self.activeModel.model.save(dir + '/taggerDeepAgentModel.keras')
 
 class EvaderDeepAgent(DeepAgent):
     def __init__(self, gameUrl, config=None, modelPath=None):
         super().__init__(gameUrl, stateDim=7, config=config, modelPath=modelPath)
         print("Created Evader Deep Agent")
 
-    def reduceState(self, agentData, playersData, powerUpsData):
-        return self.basicReduceState(agentData, playersData, powerUpsData) + \
-            self.evaderReduceState(agentData, playersData, powerUpsData)
+    def reduceState(self, agentData, taggerData, playersData, powerUpsData):
+        return self.basicReduceState(agentData, taggerData, playersData, powerUpsData) + \
+            self.evaderReduceState(agentData, taggerData, playersData, powerUpsData)
 
-    def evaderReduceState(self, agentData, playersData, powerUpsData):
+    def evaderReduceState(self, agentData, taggerData, playersData, powerUpsData):
         # Distances to tagger
         state = []
-        tagger = None
-        for player in playersData:
-            if playersData[player]['color'] == 'red':
-                tagger = playersData[player]
-        
-        state.append(tagger['x'] - agentData['x'])
-        state.append(tagger['y'] - agentData['y'])
+        state.append(taggerData['x'] - agentData['x'])
+        state.append(taggerData['y'] - agentData['y'])
 
         return state
+    
+    def save(self, dir):
+        self.activeModel.model.save(dir + '/evaderDeepAgentModel.keras')
 
 class FullDeepAgent(TaggerDeepAgent, EvaderDeepAgent):
     def __init__(self, gameUrl, config=None, taggerModelPath=None, evaderModelPath=None):
         Agent.__init__(self, gameUrl, config)
+        
+        modelConfig = None
+        if config: modelConfig = config['network']
 
-        self.taggerModel = AgentModel(9, config=config['network'], modelPath=taggerModelPath)
-        self.evaderModel = AgentModel(9, config=config['network'], modelPath=evaderModelPath)
+        self.taggerModel = AgentModel(7, config=modelConfig, modelPath=taggerModelPath)
+        self.evaderModel = AgentModel(7, config=modelConfig, modelPath=evaderModelPath)
 
         print("Created Full Deep Agent")
 
-    def reduceState(self, agentData, playersData, powerUpsData):
-        return self.basicReduceState(agentData, playersData, powerUpsData) + \
-            self.evaderReduceState(agentData, playersData, powerUpsData)
+    def reduceState(self, agentData, taggerData, playersData, powerUpsData):
+        state = self.basicReduceState(agentData, taggerData, playersData, powerUpsData)
+        if self.activeModel == self.taggerModel:
+            state += self.taggerReduceState(agentData, taggerData, playersData, powerUpsData)
+        else:
+            state += self.evaderReduceState(agentData, taggerData, playersData, powerUpsData)
+        return state
 
     def policy(self, agentData, playersData, powerUpsData):
 
@@ -112,3 +126,7 @@ class FullDeepAgent(TaggerDeepAgent, EvaderDeepAgent):
             self.activeModel = self.evaderModel
 
         super().policy(agentData, playersData, powerUpsData)
+
+    def save(self, dir):
+        self.taggerModel.model.save(dir + '/taggerDeepAgentModel.keras')
+        self.evaderModel.model.save(dir + '/evaderDeepAgentModel.keras')

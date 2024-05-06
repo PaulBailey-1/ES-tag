@@ -1,10 +1,10 @@
 from src.game_connection import GameConnection
 
-FRAME_LAG = 2
 class Agent:
     def __init__(self, gameUrl, config=None):
-        if config != None:
-            FRAME_LAG = config['frameLag']
+        self.frameLag = 2
+        if config:
+            self.frameLag = config['frameLag']
         self.conn = GameConnection(gameUrl)
         self.reset()
         
@@ -24,7 +24,7 @@ class Agent:
             else:
                 self.frameLog.append((agentData, playersData, powerUpsData))
 
-            if (len(self.frameLog) > FRAME_LAG):
+            if (len(self.frameLog) > self.frameLag):
                 data = self.frameLog.pop(0)
                 agentData = data[0]
                 playersData = data[1]

@@ -8,7 +8,9 @@ class DeepAgent(Agent):
 
     def __init__(self, gameUrl, stateDim=5, config=None, modelPath=None):
         super().__init__(gameUrl, config)
-        self.activeModel = AgentModel(stateDim, config=config['network'], modelPath=modelPath)
+        networkConfig = None
+        if config: networkConfig = config['network'] 
+        self.activeModel = AgentModel(stateDim, config=networkConfig, modelPath=modelPath)
 
     def policy(self, agentData, playersData, powerUpsData):
 

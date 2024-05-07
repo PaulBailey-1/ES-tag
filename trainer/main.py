@@ -14,12 +14,17 @@ comm.Set_errhandler(MPI.ERRORS_RETURN)
 rank = comm.Get_rank()
 workersCount = comm.Get_size()
 
-testTime = 5
+
+def log(str):
+    f = open("log.txt", "a")
+    f.write(str + "\n")
+    f.close()
 
 def main(gameUrl, config, runName, modelPath, secondModelPath, agentTypeS):
 
     # gameUrl = gameUrl.replace("RANK", str(rank))
     paramCount = None
+    testTime = 5
     if config:
         testTime = config['rl']['testTime']
     logDir = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
@@ -36,12 +41,16 @@ def main(gameUrl, config, runName, modelPath, secondModelPath, agentTypeS):
     elif agentTypeS == 'full':
         agentType = FullDeepAgent
 
-    if agentType == FullDeepAgent:
-        deepAgent = agentType(gameUrl, config=config['agent'], taggerModelPath=modelPath, evaderModelPath=secondModelPath)
-    else:
-        deepAgent = agentType(gameUrl, config=config['agent'], modelPath=modelPath)
+    agentConfig = None
+    if config:
+        agentConfig = config['agent']
 
-    simpleAgent = SimpleAgent(gameUrl, config=config['agent'])
+    if agentType == FullDeepAgent:
+        deepAgent = agentType(gameUrl, agentConfig, taggerModelPath=modelPath, evaderModelPath=secondModelPath)
+    else:
+        deepAgent = agentType(gameUrl, agentConfig, modelPath=modelPath)
+
+    simpleAgent = SimpleAgent(gameUrl, agentConfig)
     paramCount = deepAgent.activeModel.getParamCount()
 
     print(f"Process {rank}: created agents")
@@ -51,7 +60,9 @@ def main(gameUrl, config, runName, modelPath, secondModelPath, agentTypeS):
         print(f"Beginning training with {workersCount} workers")
         generation = 0
         # Set the starting parameters
-        optimizer = Optimizer(deepAgent.activeModel.getParams(), workersCount, logDir, config=config['optimizer'])
+        optimizerConfig = None
+        if config: optimizerConfig = config['optimizer']
+        optimizer = Optimizer(deepAgent.activeModel.getParams(), workersCount, logDir, config=optimizerConfig)
 
     while True:
 
@@ -84,8 +95,9 @@ def main(gameUrl, config, runName, modelPath, secondModelPath, agentTypeS):
 
             if deepAgent.score != -1:
                 exCon = deepAgent.isRed
-                if agentType == 'tagger': exCon = not exCon
+                if agentType == TaggerDeepAgent: exCon = not exCon
                 if (exCon or deepAgent.score <= 60 - testTime):
+                    print(f"Exit: {exCon} {deepAgent.score}")
                     break
             
             time.sleep(0.001)
@@ -118,6 +130,7 @@ if (__name__ == "__main__"):
     parser.add_argument('-a', '--agent_type', help='Type of agent to train (tagger, evader, full)', type=str, default="tagger")
     args = parser.parse_args()
 
+    config = None
     if args.config_file:
         with open(args.config_file, 'r') as f:
             config = json.loads(f.read())

@@ -15,6 +15,6 @@ export OMPI_ALLOW_RUN_AS_ROOT_CONFIRM=1
   mpiexec -hostfile /hostfile-ompi \
   -x PATH \
   -n ${AWS_BATCH_JOB_NUM_NODES} \
-  python main.py http://game-server-RANK:5000
+  python main.py -g http://game-server-0:5000
 
 # CMD mpiexec --allow-run-as-root -n 1 python main.py "http://game-server:5000"

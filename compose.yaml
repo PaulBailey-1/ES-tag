@@ -29,13 +29,14 @@ services:
   #     - AWS_BATCH_JOB_MAIN_NODE_PRIVATE_IPV4_ADDRESS=trainer-0
   #     - AWS_BATCH_JOB_NODE_INDEX=1
   #     - AWS_BATCH_JOB_NUM_NODES=2
-  tensorboard-server:
-    container_name: tensorboard-server
-    build: ./tensorboard
-    ports:
-      - "6006:6006"
-    volumes:
-      - type: bind
-        source: ./logs
-        target: /logs
+  
+  # tensorboard-server:
+  #   container_name: tensorboard-server
+  #   build: ./tensorboard
+  #   ports:
+  #     - "6006:6006"
+  #   volumes:
+  #     - type: bind
+  #       source: ./logs
+  #       target: /logs
   

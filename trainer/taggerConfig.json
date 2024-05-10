@@ -1,7 +1,7 @@
 {
   "optimizer": {
     "sigma": 0.01,
-    "mu": 1
+    "mu": 2
   },
   "rl": {
     "testTime": 5

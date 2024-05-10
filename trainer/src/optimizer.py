@@ -47,4 +47,10 @@ class Optimizer:
         self.params += step
         self.noise_table.clear()
 
+        avgReward = 0
+        for i in sorting:
+            avgReward += rewards[i]
+        avgReward /= len(sorting)
+
         tf.summary.scalar('top reward', data=rewards[sorting[0]], step=generation)
+        tf.summary.scalar('mean reward', data=avgReward, step=generation)

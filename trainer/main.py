@@ -90,21 +90,22 @@ def main(gameUrl, config, runName, logPath, modelPath, secondModelPath, agentTyp
         else:
             deepAgent.conn.startGame()
 
+        avgDistance = 0
+        runCount = 0
         while(True):
             simpleAgent.run()
             deepAgent.run()
 
             if deepAgent.score != -1:
-                exCon = deepAgent.isRed
-                if agentType == TaggerDeepAgent: exCon = not exCon
-                if (exCon or deepAgent.score <= 60 - testTime):
-                    # print(f"Exit: {exCon} {deepAgent.score}")
-                    break
-            
+                if (deepAgent.score + simpleAgent.score < 120):
+                    avgDistance += pow(deepAgent.x - simpleAgent.x, 2) + pow(deepAgent.y - simpleAgent.y, 2)
+                    runCount += 1
+                if (deepAgent.score + simpleAgent.score <= 120 - testTime): break
+                    
             time.sleep(0.001)
 
         rewardSendbuf = np.empty([1], dtype='i')
-        rewardSendbuf[0] = deepAgent.score
+        rewardSendbuf[0] = -avgDistance / runCount
 
         rewardRecvBuf = None
         if rank == 0:

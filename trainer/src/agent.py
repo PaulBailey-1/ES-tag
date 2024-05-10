@@ -30,6 +30,9 @@ class Agent:
                 playersData = data[1]
                 powerUpsData = data[2]
 
+                self.x = agentData['x']
+                self.y = agentData['y']
+
                 self.isRed = agentData['color'] == 'red'
                 self.score = agentData['score']
 
@@ -47,3 +50,6 @@ class Agent:
 
         self.isRed = True
         self.score = -1
+
+        self.x = 0
+        self.y = 0

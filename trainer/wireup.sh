@@ -110,6 +110,7 @@ DATEFMT=${WIREUP_DATEFMT:-"%d/%m/%Y %H:%M:%S"}
 SSH=${WIREUP_SSH:-"Unspec"}
 SSHD=${WIREUP_SSHD:-"Unspec"}
 IPROUTE=${WIREUP_IPROUTE:-"Unspec"}
+ROOT_IP_FILE=${ROOT_IP_FILE:-"/mount/efs/root"}
 
 ###
 # Logging
@@ -305,6 +306,17 @@ function report() {
 
 function run_child() {
     info "starting child process"
+
+    if [ "$AWS_BATCH_JOB_MAIN_NODE_PRIVATE_IPV4_ADDRESS" == "" ]; then
+        info "Waiting for root ip from $ROOT_IP_FILE"
+        until [ -f $ROOT_IP_FILE ]
+        do
+            sleep "1"
+        done
+        AWS_BATCH_JOB_MAIN_NODE_PRIVATE_IPV4_ADDRESS=$(<$ROOT_IP_FILE)
+        info "Read $AWS_BATCH_JOB_MAIN_NODE_PRIVATE_IPV4_ADDRESS from $ROOT_IP_FILE"
+    fi
+
     start_sshd
     ip=$($IPROUTE -o -4 addr show "$IFACE_NAME" | head -1 | awk '{print $4}' | cut -d/ -f1)
     cpus=$(grep -c processor /proc/cpuinfo)
@@ -327,6 +339,12 @@ function run_main() {
     cpus=$(grep -c processor /proc/cpuinfo)
     ip=$($IPROUTE -o -4 addr show "$IFACE_NAME" | head -1 | awk '{print $4}' | cut -d/ -f1)
     info "iface($IFACE_NAME) ip($ip) cpus($cpus)"
+
+    if [ "$AWS_BATCH_JOB_MAIN_NODE_PRIVATE_IPV4_ADDRESS" == "" ]; then
+        echo $ip > $ROOT_IP_FILE
+        info "Stored ip to $ROOT_IP_FILE"
+    fi
+
     if [ "$AWS_BATCH_JOB_NUM_NODES" == 1 ]; then
         info "this is a single node job"
     else
@@ -355,8 +373,8 @@ function run_main() {
         N=$((N+1))
     info "child registered ($N/$AWS_BATCH_JOB_NUM_NODES): $line"
         echo "$line" | awk '{print $1}' >> "$HOSTFILE"
-        echo "$line" | awk '{print $1":"$2}' >> "$HOSTFILE-intel"
-        echo "$line" | awk '{print $1" slots="$2}' >> "$HOSTFILE-ompi"
+        echo "$line" | awk '{print $1":1"}' >> "$HOSTFILE-intel"
+        echo "$line" | awk '{print $1" slots=1"}' >> "$HOSTFILE-ompi"
     done
     pkill -P $TIMER_PID >/dev/null 2>&1
     trap SIGALRM

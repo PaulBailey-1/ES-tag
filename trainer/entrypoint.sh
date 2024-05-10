@@ -12,9 +12,10 @@ export PATH=$PATH:/
 export OMPI_ALLOW_RUN_AS_ROOT=1
 export OMPI_ALLOW_RUN_AS_ROOT_CONFIRM=1
 /wireup run \
-  mpiexec -hostfile /hostfile-ompi \
-  -x PATH \
+  mpiexec  \
+  --mca btl_tcp_if_exclude lo,ecs-eth0 \
+  -hostfile /hostfile-ompi \
   -n ${AWS_BATCH_JOB_NUM_NODES} \
-  python main.py -g http://game-server-0:5000
+  python main.py -g http://localhost:5000 -l /mount/efs/logs/ -c /mount/efs/taggerConfig.json
 
 # CMD mpiexec --allow-run-as-root -n 1 python main.py "http://game-server:5000"

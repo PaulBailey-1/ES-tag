@@ -16,11 +16,12 @@ workersCount = comm.Get_size()
 
 
 def log(str):
-    f = open("log.txt", "a")
-    f.write(str + "\n")
-    f.close()
+    # f = open("log.txt", "a")
+    # f.write(str + "\n")
+    # f.close()
+    print(f"{rank}: {str}")
 
-def main(gameUrl, config, runName, modelPath, secondModelPath, agentTypeS):
+def main(gameUrl, config, runName, logPath, modelPath, secondModelPath, agentTypeS):
 
     # gameUrl = gameUrl.replace("RANK", str(rank))
     paramCount = None
@@ -30,9 +31,9 @@ def main(gameUrl, config, runName, modelPath, secondModelPath, agentTypeS):
     logDir = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
     if runName:
         logDir = runName + '-' + logDir
-    logDir = 'logs/' + logDir
+    logDir = logPath + logDir
 
-    print(f"Started trainer process {rank} on {MPI.Get_processor_name()}")
+    log(f"Started trainer process on {MPI.Get_processor_name()}")
 
     # Create agents
     agentType = TaggerDeepAgent
@@ -53,11 +54,11 @@ def main(gameUrl, config, runName, modelPath, secondModelPath, agentTypeS):
     simpleAgent = SimpleAgent(gameUrl, agentConfig)
     paramCount = deepAgent.activeModel.getParamCount()
 
-    print(f"Process {rank}: created agents")
+    log("Created agents")
     
     if rank == 0: # root
 
-        print(f"Beginning training with {workersCount} workers")
+        log(f"Beginning training with {workersCount} workers")
         generation = 0
         # Set the starting parameters
         optimizerConfig = None
@@ -97,7 +98,7 @@ def main(gameUrl, config, runName, modelPath, secondModelPath, agentTypeS):
                 exCon = deepAgent.isRed
                 if agentType == TaggerDeepAgent: exCon = not exCon
                 if (exCon or deepAgent.score <= 60 - testTime):
-                    print(f"Exit: {exCon} {deepAgent.score}")
+                    # print(f"Exit: {exCon} {deepAgent.score}")
                     break
             
             time.sleep(0.001)
@@ -112,7 +113,8 @@ def main(gameUrl, config, runName, modelPath, secondModelPath, agentTypeS):
         comm.Gather(rewardSendbuf, rewardRecvBuf, root=0)
 
         if rank == 0:
-            print("Generation ", generation)
+            if (generation % 10 == 0):
+                print("Generation ", generation)
             optimizer.update(generation, rewardRecvBuf)
 
             if generation % 10 == 0:
@@ -125,6 +127,7 @@ if (__name__ == "__main__"):
     parser.add_argument('-g', '--game_url', help="URL of game server", default="http://localhost:5000", type=str)
     parser.add_argument('-c', '--config_file', help='Path to configuration file', type=str)
     parser.add_argument('-r', '--run_name', help='Name of the run, used to create log folder name', type=str)
+    parser.add_argument('-l', '--log_path', help='Path to store logs', type=str, default="logs/")
     parser.add_argument('-m', '--model_path', help='Path to keras model to use for a deep agent', type=str)
     parser.add_argument('-s', '--second_model_path', help='Path to second keras model to use for a deep agent', type=str)
     parser.add_argument('-a', '--agent_type', help='Type of agent to train (tagger, evader, full)', type=str, default="tagger")
@@ -136,4 +139,4 @@ if (__name__ == "__main__"):
             config = json.loads(f.read())
             print("Read config from ", args.config_file)
 
-    main(args.game_url, config, args.run_name, args.model_path, args.second_model_path, args.agent_type)
+    main(args.game_url, config, args.run_name, args.log_path, args.model_path, args.second_model_path, args.agent_type)

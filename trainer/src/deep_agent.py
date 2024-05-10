@@ -18,10 +18,11 @@ class DeepAgent(Agent):
         for player in playersData:
             if playersData[player]['color'] == 'red':
                 taggerData = playersData[player]
+        if agentData['color'] == 'red':
+                taggerData = agentData
 
         if len(playersData) > 0 and taggerData != None:
             state = self.reduceState(agentData, taggerData, playersData, powerUpsData)
-
             rawAction = self.activeModel.model.predict(np.array([state]), verbose=0)[0]
             action = [bool(x > 0) for x in rawAction]
             self.conn.move(action)

@@ -8,7 +8,7 @@ class Agent:
         self.conn = GameConnection(gameUrl)
         self.reset()
         
-    def run(self):
+    def run(self, forceRed=None):
 
         if self.conn.updated:
 
@@ -34,6 +34,8 @@ class Agent:
                 self.y = agentData['y']
 
                 self.isRed = agentData['color'] == 'red'
+                if forceRed:
+                    self.isRed = forceRed
                 self.score = agentData['score']
 
                 action = self.policy(agentData, playersData, powerUpsData)

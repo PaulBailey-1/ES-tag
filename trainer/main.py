@@ -23,7 +23,7 @@ def log(str):
 
 def main(gameUrl, config, runName, logPath, modelPath, secondModelPath, agentTypeS):
 
-    # gameUrl = gameUrl.replace("RANK", str(rank))
+    gameUrl = gameUrl.replace("RANK", str(rank))
     paramCount = None
     testTime = 5
     if config:
@@ -93,13 +93,17 @@ def main(gameUrl, config, runName, logPath, modelPath, secondModelPath, agentTyp
         avgDistance = 0
         runCount = 0
         while(True):
-            simpleAgent.run()
-            deepAgent.run()
+            if agentType == TaggerDeepAgent:
+                simpleAgent.run(forceRed=False)
+                deepAgent.run(forceRed=True)
 
             if deepAgent.score != -1:
-                if (deepAgent.score + simpleAgent.score < 120):
-                    avgDistance += pow(deepAgent.x - simpleAgent.x, 2) + pow(deepAgent.y - simpleAgent.y, 2)
-                    runCount += 1
+
+                if agentType == TaggerDeepAgent:
+                    if (deepAgent.score + simpleAgent.score < 120):
+                        avgDistance += np.sqrt(pow(deepAgent.x - simpleAgent.x, 2) + pow(deepAgent.y - simpleAgent.y, 2))
+                        runCount += 1
+
                 if (deepAgent.score + simpleAgent.score <= 120 - testTime): break
                     
             time.sleep(0.001)

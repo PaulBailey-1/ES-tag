@@ -7,6 +7,11 @@ import tensorflow as tf
 
 rng = np.random.default_rng()
 
+def normalize(vec):
+    l = np.linalg.norm(vec)
+    if l == 0:
+        return vec
+    return [x / l for x in vec]
 class Optimizer:
 
     def __init__(self, params, lamb, logDir, config=None):
@@ -16,6 +21,9 @@ class Optimizer:
         self.lamb = lamb
         self.mu = 1
         self.sigma = 0.01
+
+        self.step = np.zeros(self.n)
+        self.lastStep = np.zeros(self.n)
 
         if config:
             self.mu = config['mu']
@@ -30,7 +38,7 @@ class Optimizer:
         self.log_writer = tf.summary.create_file_writer(logDir + "/evolution")
         self.log_writer.set_as_default()
 
-        print(f"Initialized optimizer mu: {self.mu} sigma: {self.sigma}")
+        print(f"Initialized optimizer n: {self.n} mu: {self.mu} sigma: {self.sigma}")
 
     def getParams(self):
         noise = rng.normal(size=self.n)
@@ -40,11 +48,10 @@ class Optimizer:
 
     def update(self, generation, rewards):
         sorting = np.array(rewards).argsort()[::-1][:self.mu]
-        step = np.zeros(self.n)
         for i in range(self.mu):
-            step += self.w[i] * self.noise_table[sorting[i]]
-        step *= self.sigma
-        self.params += step
+            self.step += self.w[i] * self.noise_table[sorting[i]]
+        self.step *= self.sigma
+        self.params += self.step
         self.noise_table.clear()
 
         avgReward = 0
@@ -52,5 +59,11 @@ class Optimizer:
             avgReward += rewards[i]
         avgReward /= len(sorting)
 
+        stepCorrelation = np.dot(normalize(self.step), normalize(self.lastStep))
+        self.lastStep = np.copy(self.step)
+        print(stepCorrelation)
+            
         tf.summary.scalar('top reward', data=rewards[sorting[0]], step=generation)
         tf.summary.scalar('mean reward', data=avgReward, step=generation)
+        tf.summary.scalar('step size', data=self.sigma, step=generation)
+        tf.summary.scalar('step correlation', data=stepCorrelation, step=generation)

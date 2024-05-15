@@ -2,8 +2,8 @@ from src.agent import Agent
 
 class SimpleAgent(Agent):
 
-    def __init__(self, gameUrl, config=None):
-        super().__init__(gameUrl, config=config)
+    def __init__(self, gameUrl, config=None, gameTag=None):
+        super().__init__(gameUrl, config=config, gameTag=gameTag)
         print("Created Simple Agent")
         
     def policy(self, agentData, playersData, powerUpsData):

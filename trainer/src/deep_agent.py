@@ -6,8 +6,8 @@ from src.agent_model import AgentModel
 
 class DeepAgent(Agent):
 
-    def __init__(self, gameUrl, stateDim=5, config=None, modelPath=None):
-        super().__init__(gameUrl, config)
+    def __init__(self, gameUrl, stateDim=5, config=None, modelPath=None, gameTag=None):
+        super().__init__(gameUrl, config, gameTag=gameTag)
         networkConfig = None
         if config: networkConfig = config['network'] 
         self.activeModel = AgentModel(stateDim, config=networkConfig, modelPath=modelPath)
@@ -54,8 +54,9 @@ class DeepAgent(Agent):
         self.activeModel.model.save(dir + '/deepAgentModel.keras')
 
 class TaggerDeepAgent(DeepAgent):
-    def __init__(self, gameUrl, config=None, modelPath=None):
-        super().__init__(gameUrl, stateDim=7, config=config, modelPath=modelPath)
+    def __init__(self, gameUrl, config=None, modelPath=None, gameTag=None):
+        assert gameTag != None
+        super().__init__(gameUrl, stateDim=7, config=config, modelPath=modelPath, gameTag=gameTag)
         print("Created Tagger Deep Agent")
 
     def reduceState(self, agentData, taggerData, playersData, powerUpsData):
@@ -82,8 +83,8 @@ class TaggerDeepAgent(DeepAgent):
         self.activeModel.model.save(dir + '/taggerDeepAgentModel.keras')
 
 class EvaderDeepAgent(DeepAgent):
-    def __init__(self, gameUrl, config=None, modelPath=None):
-        super().__init__(gameUrl, stateDim=7, config=config, modelPath=modelPath)
+    def __init__(self, gameUrl, config=None, modelPath=None, gameTag=None):
+        super().__init__(gameUrl, stateDim=7, config=config, modelPath=modelPath, gameTag=gameTag)
         print("Created Evader Deep Agent")
 
     def reduceState(self, agentData, taggerData, playersData, powerUpsData):
@@ -102,8 +103,8 @@ class EvaderDeepAgent(DeepAgent):
         self.activeModel.model.save(dir + '/evaderDeepAgentModel.keras')
 
 class FullDeepAgent(TaggerDeepAgent, EvaderDeepAgent):
-    def __init__(self, gameUrl, config=None, taggerModelPath=None, evaderModelPath=None):
-        Agent.__init__(self, gameUrl, config)
+    def __init__(self, gameUrl, config=None, taggerModelPath=None, evaderModelPath=None, gameTag=None):
+        Agent.__init__(self, gameUrl, config, gameTag=gameTag)
         
         modelConfig = None
         if config: modelConfig = config['network']

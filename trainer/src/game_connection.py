@@ -2,7 +2,7 @@ import socketio
 
 class GameConnection:
 
-    def __init__(self, url):
+    def __init__(self, url, gameTag=None):
         self.socket = socketio.Client()
 
         self.socket.on("connect", lambda : print("Connected"))
@@ -11,7 +11,12 @@ class GameConnection:
 
         print(f"Connecting to {url} ... ", end="")
         self.socket.connect(url)
-        self.socket.emit("new player")
+        
+        assert gameTag != None
+        if gameTag != None:
+            self.socket.emit("new player force", gameTag)
+        else:
+            self.socket.emit("new player")
 
         self.state = {}
         self.updated = False
@@ -31,8 +36,12 @@ class GameConnection:
         }
         self.socket.emit("movement", packet)
 
-    def joinGame(self):
-        self.socket.emit("join")
+    def joinGame(self, gameTag=None):
+        if gameTag:
+            print("Force join ", gameTag)
+            self.socket.emit("force join", gameTag)
+        else:
+            self.socket.emit("join")
 
     def restartGame(self):
         self.socket.emit("restart")

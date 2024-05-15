@@ -1,11 +1,11 @@
 from src.game_connection import GameConnection
 
 class Agent:
-    def __init__(self, gameUrl, config=None):
+    def __init__(self, gameUrl, config=None, gameTag=None):
         self.frameLag = 2
         if config:
             self.frameLag = config['frameLag']
-        self.conn = GameConnection(gameUrl)
+        self.conn = GameConnection(gameUrl, gameTag=gameTag)
         self.reset()
         
     def run(self, forceRed=None):

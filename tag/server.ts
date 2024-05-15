@@ -1,4 +1,4 @@
-import { isNull } from "lodash";
+import { isNull, last } from "lodash";
 import { Socket } from "socket.io";
 
 // Dependencies
@@ -23,7 +23,13 @@ app.use('/static', express.static(__dirname + '/static'));
 app.get('/', function (request, response) {
     response.sendFile(path.join(__dirname, '/static/index.html'));
 });
+let lastWatchTag = 0;
 app.get('/view', function (request, response) {
+    if ('tag' in request.query) {
+        lastWatchTag = request.query.tag;
+    } else {
+        lastWatchTag = -1;
+    }
     response.sendFile(path.join(__dirname, '/static/view.html'));
 });
 
@@ -60,7 +66,7 @@ const platforms = [];
 let games: Game[] = [];
 let connections: Connection[] = [];
 
-function joinGame(socketId: string, watch: boolean = false) {
+function joinGame(socketId: string, watch: boolean = false, gameTag = -1) {
 
     if (games[connections[socketId].game] !== undefined && games[connections[socketId].game].players[socketId] !== undefined) {
         games[connections[socketId].game].removePlayer(socketId);
@@ -81,10 +87,23 @@ function joinGame(socketId: string, watch: boolean = false) {
     if (watch) {
         gameId = 0;
     }
+    if (gameTag != -1) {
+        console.log("Connecting to tagged game: " + gameTag);
+        gameId = -1;
+        for (let i = 0; i < games.length; i++) {
+            if (games[i].tag == gameTag) {
+                gameId = i;
+            }
+        }
+    }
     if (gameId === -1) {
         gameId = games.length;
         games.push(new Game(games.length));
         games[gameId].run();
+        if (gameTag != -1) {
+            games[gameId].tag = gameTag;
+            console.log("Created tagged game: " + gameTag);
+        }
     }
     connections[socketId].game = gameId;
     if (!watch) {
@@ -111,11 +130,18 @@ io.on('connection', function (socket: Socket) {
         joinGame(socket.id);
     });
 
+    socket.on('new player force', function (gameTag) {
+        connections[socket.id] = {
+            socket: socket
+        };
+        joinGame(socket.id, false, gameTag);
+    });
+    
     socket.on('new watcher', function() {
         connections[socket.id] = {
             socket: socket
         };
-        joinGame(socket.id, true);
+        joinGame(socket.id, true, lastWatchTag);
     });
 
     socket.on('start', function () {
@@ -134,6 +160,11 @@ io.on('connection', function (socket: Socket) {
     socket.on('join', function () {
         socket.leave(String(connections[socket.id].game));
         joinGame(socket.id);
+    });
+
+    socket.on('force join', function (gameTag) {
+        socket.leave(String(connections[socket.id].game));
+        joinGame(socket.id, false, gameTag);
     });
 
     socket.on('movement', function (data: ClientData) {
@@ -161,6 +192,7 @@ class Game {
     private powerUps = [];
 
     public id: number;
+    public tag: number;
     public running: boolean;
     
     public playerCount: number;
@@ -170,6 +202,7 @@ class Game {
 
     constructor(id: number) {
         this.id = id;
+        this.tag = -1;
         this.running = false;
         this.playerCount = 0;
         this.lastScoreTime = 0.0;
@@ -343,19 +376,25 @@ class Game {
     }
 
     restart() {
+        
         let playerIds = [];
         for (let i in this.players) {
             playerIds[i] = this.players[i].id;
         }
-        this.running = false;
         this.players = [];
         this.playerCount = 0;
+        this.running = false;
         this.powerUps = [];
         this.powerUpCounter = powerUpTime;
-
+        
         for (let id in playerIds) {
-            connections[id].socket.leave(String(this.id));
-            joinGame(id);
+            if (this.tag === -1) {
+                connections[id].socket.leave(String(this.id));
+                joinGame(id);
+            } else {
+                this.addPlayer(id);
+                connections[id].socket.emit('new game');
+            }
         }
     }
 }

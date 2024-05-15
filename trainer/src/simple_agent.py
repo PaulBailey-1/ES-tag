@@ -50,9 +50,10 @@ class SimpleAgent(Agent):
                         taggerData = playersData[player]
 
                 if (len(taggerData) > 0):
-                    if taggerData['x'] > agentData['x']:
+                    deltax = taggerData['x'] - agentData['x']
+                    if deltax > 0 or (abs(deltax) < 30 and agentData['x'] > 500):
                         left = True
-                    elif taggerData['x'] < agentData['x']:
+                    elif deltax < 0 or (abs(deltax) < 30 and agentData['x'] < 500):
                         right = True
                     if taggerData['y'] > agentData['y']:
                         up = True

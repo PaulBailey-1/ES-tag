@@ -10,7 +10,7 @@ testTime = 10
 if (__name__ == "__main__"):
 
     # Create agents
-    deepAgent = FullDeepAgent(gameUrl)
+    deepAgent = SimpleAgent(gameUrl)
 
     while(True):
         deepAgent.run()

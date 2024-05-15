@@ -35,10 +35,10 @@ class Optimizer:
         self.lastStep = np.zeros(self.n)
 
         if config:
-            if config['mu']: self.mu = config['mu']
-            if config['delta0']: self.delta = config['delta0']
-            if config['c']: self.c = config['c']
-            if config['ccov']: self.ccov = config['ccov']
+            if 'mu' in config: self.mu = config['mu']
+            if 'delta0' in config: self.delta = config['delta0']
+            if 'c' in config: self.c = config['c']
+            if 'ccov' in config: self.ccov = config['ccov']
 
             if self.mu > self.lamb:
                 print("Error: Parent population cannot be larger than total population")

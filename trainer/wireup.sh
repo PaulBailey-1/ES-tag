@@ -373,8 +373,8 @@ function run_main() {
         N=$((N+1))
     info "child registered ($N/$AWS_BATCH_JOB_NUM_NODES): $line"
         echo "$line" | awk '{print $1}' >> "$HOSTFILE"
-        echo "$line" | awk '{print $1":1"}' >> "$HOSTFILE-intel"
-        echo "$line" | awk '{print $1" slots=1"}' >> "$HOSTFILE-ompi"
+        echo "$line" | awk -v WPN="$WORKERS_PER_NODE" '{print $1":"WPN}' >> "$HOSTFILE-intel"
+        echo "$line" | awk -v WPN="$WORKERS_PER_NODE" '{print $1" slots="WPN}' >> "$HOSTFILE-ompi"
     done
     pkill -P $TIMER_PID >/dev/null 2>&1
     trap SIGALRM

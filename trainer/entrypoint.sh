@@ -11,11 +11,13 @@ source /etc/profile
 export PATH=$PATH:/
 export OMPI_ALLOW_RUN_AS_ROOT=1
 export OMPI_ALLOW_RUN_AS_ROOT_CONFIRM=1
+export WORKERS_PER_NODE=1
+
 /wireup run \
   mpiexec  \
   --mca btl_tcp_if_exclude lo,ecs-eth0 \
   -hostfile /hostfile-ompi \
-  -n ${AWS_BATCH_JOB_NUM_NODES} \
+  -n $(($AWS_BATCH_JOB_NUM_NODES * $WORKERS_PER_NODE)) \
   python main.py -g http://localhost:5000 -l /mount/efs/logs/ -c /mount/efs/taggerConfig.json -m /mount/efs/model.keras
 
 # CMD mpiexec --allow-run-as-root -n 1 python main.py "http://game-server:5000"

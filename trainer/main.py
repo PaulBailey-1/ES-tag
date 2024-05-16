@@ -47,11 +47,11 @@ def main(gameUrl, config, runName, logPath, modelPath, secondModelPath, agentTyp
         agentConfig = config['agent']
 
     if agentType == FullDeepAgent:
-        deepAgent = agentType(gameUrl, agentConfig, gameTag=rank, taggerModelPath=modelPath, evaderModelPath=secondModelPath)
+        deepAgent = agentType(gameUrl, agentConfig, taggerModelPath=modelPath, evaderModelPath=secondModelPath)
     else:
-        deepAgent = agentType(gameUrl, agentConfig, gameTag=rank, modelPath=modelPath)
+        deepAgent = agentType(gameUrl, agentConfig, modelPath=modelPath)
 
-    simpleAgent = SimpleAgent(gameUrl, agentConfig, gameTag=rank)
+    simpleAgent = SimpleAgent(gameUrl, agentConfig)
     paramCount = deepAgent.activeModel.getParamCount()
 
     log("Created agents")

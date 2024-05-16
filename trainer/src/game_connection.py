@@ -12,7 +12,6 @@ class GameConnection:
         print(f"Connecting to {url} ... ", end="")
         self.socket.connect(url)
         
-        assert gameTag != None
         if gameTag != None:
             self.socket.emit("new player force", gameTag)
         else:

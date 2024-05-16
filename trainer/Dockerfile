@@ -5,7 +5,6 @@ RUN apt upgrade &&\
     apt install -y openmpi-bin libopenmpi-dev
 RUN pip install mpi4py python-socketio[client]
 
-ARG WIREUP_URI=https://raw.githubusercontent.com/aws-samples/batch-mpi-examples/main/util/wireup.sh
 ADD ./wireup.sh /wireup
 RUN chmod +x /wireup \
 &&  /wireup install

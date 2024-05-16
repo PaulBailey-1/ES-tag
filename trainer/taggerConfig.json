@@ -9,7 +9,7 @@
   "agent": {
     "frameLag": 2,
     "network" : {
-      "hiddenLayers": 2,
+      "hiddenLayers": 1,
       "hiddenLayerDim": 10,
       "hiddenNonlin": "relu",
       "initialSigma": 0.05

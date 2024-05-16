@@ -9,7 +9,7 @@ class DeepAgent(Agent):
     def __init__(self, gameUrl, stateDim=5, config=None, modelPath=None, gameTag=None):
         super().__init__(gameUrl, config, gameTag=gameTag)
         networkConfig = None
-        if config: networkConfig = config['network'] 
+        if config and 'network' in config: networkConfig = config['network'] 
         self.activeModel = AgentModel(stateDim, config=networkConfig, modelPath=modelPath)
 
     def policy(self, agentData, playersData, powerUpsData):
@@ -55,7 +55,6 @@ class DeepAgent(Agent):
 
 class TaggerDeepAgent(DeepAgent):
     def __init__(self, gameUrl, config=None, modelPath=None, gameTag=None):
-        assert gameTag != None
         super().__init__(gameUrl, stateDim=7, config=config, modelPath=modelPath, gameTag=gameTag)
         print("Created Tagger Deep Agent")
 

@@ -10,15 +10,15 @@ class AgentModel():
             self.model = tf.keras.models.load_model(modelPath)
         else:
             # Build neural network model
-            hiddenLayers = 2
+            hiddenLayers = 1
             hiddenLayerDim = 10 
             hiddenNonlin =  "relu"
             initialSigma =  0.05
             if (config):
-                hiddenLayers = config['hiddenLayers']
-                hiddenLayerDim = config['hiddenLayerDim']
-                hiddenNonlin = config['hiddenNonlin']
-                initialSigma = config['initialSigma']
+                if "hiddenLayers" in config: hiddenLayers = config['hiddenLayers']
+                if "hiddenLayerDim" in config: hiddenLayerDim = config['hiddenLayerDim']
+                if "hiddenNonlin" in config: hiddenNonlin = config['hiddenNonlin']
+                if "initialSigma" in config: initialSigma = config['initialSigma']
 
             kernelInit = tf.keras.initializers.RandomNormal(mean=0.0, stddev=initialSigma)
             self.model = tf.keras.Sequential([
@@ -26,7 +26,6 @@ class AgentModel():
                 [tf.keras.layers.Dense(units=hiddenLayerDim, activation=hiddenNonlin, kernel_initializer=kernelInit, bias_initializer='zeros') for _ in range(hiddenLayers)] + [
                 tf.keras.layers.Dense(units=4, activation='tanh', kernel_initializer=kernelInit, bias_initializer='zeros'),
             ])
-        # self.model.summary()
 
         self.params = np.concatenate([weights.flatten() for weights in self.model.get_weights()])
 

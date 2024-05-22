@@ -1,7 +1,8 @@
 {
   "optimizer": {
     "sigma": 0.01,
-    "mu": 2
+    "mu": 2,
+    "beta": 0.0005
   },
   "rl": {
     "testTime": 5
@@ -9,10 +10,10 @@
   "agent": {
     "frameLag": 2,
     "network" : {
-      "hiddenLayers": 1,
+      "hiddenLayers": 2,
       "hiddenLayerDim": 10,
       "hiddenNonlin": "relu",
-      "initialSigma": 0.05
+      "initialSigma": 0.1
     }
   }
 }

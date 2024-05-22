@@ -14,7 +14,6 @@ comm.Set_errhandler(MPI.ERRORS_RETURN)
 rank = comm.Get_rank()
 workersCount = comm.Get_size()
 
-
 def log(str):
     # f = open("log.txt", "a")
     # f.write(str + "\n")

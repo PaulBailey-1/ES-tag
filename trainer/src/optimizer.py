@@ -39,6 +39,8 @@ class Optimizer:
             if 'delta0' in config: self.delta = config['delta0']
             if 'c' in config: self.c = config['c']
             if 'ccov' in config: self.ccov = config['ccov']
+            if 'beta' in config: self.beta = config['beta']
+            if 'chihat' in config: self.chihat = config['chihat']
 
             if self.mu > self.lamb:
                 print("Error: Parent population cannot be larger than total population")

@@ -2,14 +2,16 @@ FROM tensorflow/tensorflow:latest
 WORKDIR /app
 RUN apt upgrade &&\
     apt update &&\
-    apt install -y openmpi-bin libopenmpi-dev
+    apt install -y openmpi-bin libopenmpi-dev dos2unix
 RUN pip install mpi4py python-socketio[client]
 
 ADD ./wireup.sh /wireup
-RUN chmod +x /wireup \
+RUN dos2unix /wireup \ 
+&& chmod +x /wireup \
 &&  /wireup install
 ADD ./entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
+RUN dos2unix /entrypoint.sh \
+&& chmod +x /entrypoint.sh
 RUN apt clean \
 &&  rm -rf /var/cache/apt
 

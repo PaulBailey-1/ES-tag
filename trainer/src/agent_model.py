@@ -6,11 +6,14 @@ import numpy as np
 
 class AgentModel():
     def __init__(self, inputDim, config=None, modelPath=None):
+
+        print("Num GPUs Available: ", len(tf.config.list_physical_devices('GPU')))
+
         if modelPath:
             self.model = tf.keras.models.load_model(modelPath)
         else:
             # Build neural network model
-            hiddenLayers = 1
+            hiddenLayers = 2
             hiddenLayerDim = 10 
             hiddenNonlin =  "relu"
             initialSigma =  0.05

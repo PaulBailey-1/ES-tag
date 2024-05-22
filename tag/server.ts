@@ -194,11 +194,13 @@ class Game {
     public id: number;
     public tag: number;
     public running: boolean;
+    public runTime: number;
     
     public playerCount: number;
     private lastScoreTime: number;
     private powerUpCounter: number;
     private lastUpdateTime: number;
+    private startTime: number;
 
     constructor(id: number) {
         this.id = id;
@@ -255,7 +257,7 @@ class Game {
     }
 
     getData() {
-        let data = { playerData: {}, powerUpData: [], platformData: []};
+        let data = { runTime: this.runTime, playerData: {}, powerUpData: [], platformData: []};
         for (let id in this.players) {
             let player: Player = this.players[id];
             data.playerData[id] = player.toData();
@@ -305,6 +307,7 @@ class Game {
     
     startGame(taggerId = null) {
         this.running = true;
+        this.startTime = (new Date()).getTime();
         if (taggerId == null) {
             this.updateTagger();
         } else {
@@ -314,6 +317,9 @@ class Game {
     }
 
     update(dt: number) {
+        let currentTime = (new Date()).getTime();
+        this.runTime = currentTime - this.startTime;
+
         for (let id in this.players) {
             this.players[id].update(dt);
         }
@@ -353,7 +359,6 @@ class Game {
             }
         
             // Scoring
-            let currentTime = (new Date()).getTime();
             let timeDifference = currentTime - this.lastScoreTime;
             if (timeDifference >= 1000) {
                 for (let id in this.players) {

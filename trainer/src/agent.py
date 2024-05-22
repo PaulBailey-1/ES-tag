@@ -14,6 +14,7 @@ class Agent:
 
             self.conn.updated = False
 
+            runTime = self.conn.state["runTime"]
             agentData  = self.conn.state["playerData"][self.conn.socket.get_sid()]
             playersData = self.conn.state["playerData"]
             playersData.pop(self.conn.socket.get_sid())
@@ -22,13 +23,15 @@ class Agent:
             if (self.ignoreCount > 0):
                 self.ignoreCount -= 1
             else:
-                self.frameLog.append((agentData, playersData, powerUpsData))
+                self.frameLog.append((runTime, agentData, playersData, powerUpsData))
 
             if (len(self.frameLog) > self.frameLag):
                 data = self.frameLog.pop(0)
-                agentData = data[0]
-                playersData = data[1]
-                powerUpsData = data[2]
+
+                self.runTime = data[0]
+                agentData = data[1]
+                playersData = data[2]
+                powerUpsData = data[3]
 
                 self.x = agentData['x']
                 self.y = agentData['y']
@@ -50,6 +53,7 @@ class Agent:
         self.frameLog = []
         self.ignoreCount = 3
 
+        self.runTime = 0
         self.isRed = True
         self.score = -1
 

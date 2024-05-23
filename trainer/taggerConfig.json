@@ -1,7 +1,7 @@
 {
   "optimizer": {
-    "sigma": 0.01,
-    "mu": 2,
+    "delta0": 0.1,
+    "mu": 14,
     "beta": 0.0005
   },
   "rl": {
@@ -13,7 +13,7 @@
       "hiddenLayers": 2,
       "hiddenLayerDim": 10,
       "hiddenNonlin": "relu",
-      "initialSigma": 0.1
+      "initialSigma": 10.0
     }
   }
 }

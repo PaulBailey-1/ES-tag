@@ -2,6 +2,9 @@ from src.optimizer import Optimizer
 from src.simple_agent import SimpleAgent
 from src.deep_agent import TaggerDeepAgent, EvaderDeepAgent, FullDeepAgent
 
+import src.logger as logger
+from src.logger import log
+
 import time
 import datetime
 import json
@@ -14,11 +17,7 @@ comm.Set_errhandler(MPI.ERRORS_RETURN)
 rank = comm.Get_rank()
 workersCount = comm.Get_size()
 
-def log(str):
-    # f = open("log.txt", "a")
-    # f.write(str + "\n")
-    # f.close()
-    print(f"{rank}: {str}")
+logger.rank = rank
 
 def main(gameUrl, config, runName, logPath, modelPath, secondModelPath, agentTypeS, populationSize):
 
@@ -59,67 +58,82 @@ def main(gameUrl, config, runName, logPath, modelPath, secondModelPath, agentTyp
 
         log(f"Beginning training with {workersCount} workers")
         generation = 0
+        if populationSize == None:
+            populationSize = workersCount
+        else:
+            assert populationSize % workersCount == 0
+
         # Set the starting parameters
         optimizerConfig = None
-        if config: optimizerConfig = config['optimizer']
-        optimizer = Optimizer(deepAgent.activeModel.getParams(), workersCount, logDir, config=optimizerConfig)
+        if config and 'optimizer' in config: optimizerConfig = config['optimizer']
+        optimizer = Optimizer(deepAgent.activeModel.getParams(), populationSize, logDir, config=optimizerConfig)
+
+        allRewards = np.empty([populationSize], dtype="i")
 
     while True:
 
-        # Rollout new params
-        paramSendBuf = None
-        if rank == 0:
+        for batch in range((int)(populationSize / workersCount)):
 
-            paramSendBuf = np.empty([workersCount, paramCount], dtype='f')
-            paramSendBuf[:] = [optimizer.getParams() for _ in range(workersCount)]
+            if (rank == 0):
+                log(f"Batch {batch}")
 
-        paramRecvBuf = np.empty(paramCount, dtype='f')
-        comm.Scatter(paramSendBuf, paramRecvBuf, root=0)
+            # Rollout new params
+            paramSendBuf = None
+            if rank == 0:
 
-        # Run agents
-        deepAgent.reset()
-        simpleAgent.reset()
-        
-        deepAgent.conn.restartGame()
+                paramSendBuf = np.empty([workersCount, paramCount], dtype='f')
+                paramSendBuf[:] = [optimizer.getParams() for _ in range(workersCount)]
 
-        if agentType == TaggerDeepAgent:
-            deepAgent.conn.startGame(True)
-        elif agentType == EvaderDeepAgent:
-            simpleAgent.conn.startGame(True)
-        else:
-            deepAgent.conn.startGame()
+            paramRecvBuf = np.empty(paramCount, dtype='f')
+            comm.Scatter(paramSendBuf, paramRecvBuf, root=0)
 
-        avgDistance = 0
-        runCount = 0
-        while(True):
+            # Run agents
+            deepAgent.reset()
+            simpleAgent.reset()
+            
+            deepAgent.conn.restartGame()
+
             if agentType == TaggerDeepAgent:
-                simpleAgent.run(forceRed=False)
-                deepAgent.run(forceRed=True)
+                deepAgent.conn.startGame(True)
+            elif agentType == EvaderDeepAgent:
+                simpleAgent.conn.startGame(True)
+            else:
+                deepAgent.conn.startGame()
 
-            if deepAgent.score != -1:
-
+            avgDistance = 0
+            runCount = 0
+            while(True):
                 if agentType == TaggerDeepAgent:
-                    if (simpleAgent.runTime > 1):
-                        avgDistance += np.sqrt(pow(deepAgent.x - simpleAgent.x, 2) + pow(deepAgent.y - simpleAgent.y, 2))
-                        runCount += 1
+                    simpleAgent.run(forceRed=False)
+                    deepAgent.run(forceRed=True)
 
-                if (simpleAgent.runTime > testTime): break
-                    
-            time.sleep(0.001)
+                if deepAgent.score != -1:
 
-        rewardSendbuf = np.empty([1], dtype='i')
-        rewardSendbuf[0] = -avgDistance / runCount
+                    if agentType == TaggerDeepAgent:
+                        if (simpleAgent.runTime > 1):
+                            avgDistance += np.sqrt(pow(deepAgent.x - simpleAgent.x, 2) + pow(deepAgent.y - simpleAgent.y, 2))
+                            runCount += 1
 
-        rewardRecvBuf = None
+                    if (simpleAgent.runTime > testTime): break
+                        
+                time.sleep(0.001)
+
+            rewardSendbuf = np.empty([1], dtype='i')
+            rewardSendbuf[0] = -avgDistance / runCount
+
+            rewardRecvBuf = None
+            if rank == 0:
+                rewardRecvBuf = np.empty([workersCount], dtype="i")
+            
+            comm.Gather(rewardSendbuf, rewardRecvBuf, root=0)
+
+            if rank == 0:
+                allRewards[batch * workersCount:(batch + 1) * workersCount] = rewardRecvBuf
+
         if rank == 0:
-            rewardRecvBuf = np.empty([workersCount], dtype="i")
-        
-        comm.Gather(rewardSendbuf, rewardRecvBuf, root=0)
-
-        if rank == 0:
-            if (generation % 10 == 0):
-                print("Generation ", generation)
-            optimizer.update(generation, rewardRecvBuf)
+            # if (generation % 10 == 0):
+            log(f"Generation {generation}")
+            optimizer.update(generation, allRewards)
 
             if generation % 10 == 0:
                 deepAgent.save(logDir)

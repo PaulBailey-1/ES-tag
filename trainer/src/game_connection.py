@@ -1,3 +1,4 @@
+from src.logger import log
 import socketio
 
 class GameConnection:
@@ -5,11 +6,11 @@ class GameConnection:
     def __init__(self, url, gameTag=None):
         self.socket = socketio.Client()
 
-        self.socket.on("connect", lambda : print("Connected"))
-        self.socket.on("disconnect", lambda : print("Disconnected"))
+        self.socket.on("connect", lambda : log("Connected"))
+        self.socket.on("disconnect", lambda : log("Disconnected"))
         self.socket.on("state", self._updateState)
 
-        print(f"Connecting to {url} ... ", end="")
+        log(f"Connecting to {url} ... ", end="")
         self.socket.connect(url)
         
         if gameTag != None:
@@ -37,7 +38,7 @@ class GameConnection:
 
     def joinGame(self, gameTag=None):
         if gameTag:
-            print("Force join ", gameTag)
+            log("Force join ", gameTag)
             self.socket.emit("force join", gameTag)
         else:
             self.socket.emit("join")
@@ -48,7 +49,7 @@ class GameConnection:
     def startGame(self, tagger=False):
         if (tagger):
             self.socket.emit("start tagger")
-            # print("Started game as tagger")
+            # log("Started game as tagger")
         else:
             self.socket.emit("start")
-            # print("Started game")
+            # log("Started game")

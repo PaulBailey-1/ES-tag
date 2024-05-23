@@ -1,4 +1,4 @@
-
+from src.logger import log
 import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '1' 
 import tensorflow as tf
@@ -7,7 +7,7 @@ import numpy as np
 class AgentModel():
     def __init__(self, inputDim, config=None, modelPath=None):
 
-        print("Num GPUs Available: ", len(tf.config.list_physical_devices('GPU')))
+        log(f"Num GPUs Available: {len(tf.config.list_physical_devices('GPU'))}")
 
         if modelPath:
             self.model = tf.keras.models.load_model(modelPath)
@@ -27,7 +27,7 @@ class AgentModel():
             self.model = tf.keras.Sequential([
                 tf.keras.Input(shape=(inputDim,))] +
                 [tf.keras.layers.Dense(units=hiddenLayerDim, activation=hiddenNonlin, kernel_initializer=kernelInit, bias_initializer='zeros') for _ in range(hiddenLayers)] + [
-                tf.keras.layers.Dense(units=4, activation='tanh', kernel_initializer=kernelInit, bias_initializer='zeros'),
+                tf.keras.layers.Dense(units=4, activation='tanh', kernel_initializer=kernelInit, bias_initializer=kernelInit),
             ])
 
         self.params = np.concatenate([weights.flatten() for weights in self.model.get_weights()])

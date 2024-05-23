@@ -1,6 +1,6 @@
-
 import numpy as np
 
+from src.logger import log
 from src.agent import Agent
 from src.agent_model import AgentModel
 
@@ -56,7 +56,7 @@ class DeepAgent(Agent):
 class TaggerDeepAgent(DeepAgent):
     def __init__(self, gameUrl, config=None, modelPath=None, gameTag=None):
         super().__init__(gameUrl, stateDim=7, config=config, modelPath=modelPath, gameTag=gameTag)
-        print("Created Tagger Deep Agent")
+        log("Created Tagger Deep Agent")
 
     def reduceState(self, agentData, taggerData, playersData, powerUpsData):
         return self.basicReduceState(agentData, taggerData, playersData, powerUpsData) + \
@@ -84,7 +84,7 @@ class TaggerDeepAgent(DeepAgent):
 class EvaderDeepAgent(DeepAgent):
     def __init__(self, gameUrl, config=None, modelPath=None, gameTag=None):
         super().__init__(gameUrl, stateDim=7, config=config, modelPath=modelPath, gameTag=gameTag)
-        print("Created Evader Deep Agent")
+        log("Created Evader Deep Agent")
 
     def reduceState(self, agentData, taggerData, playersData, powerUpsData):
         return self.basicReduceState(agentData, taggerData, playersData, powerUpsData) + \
@@ -111,7 +111,7 @@ class FullDeepAgent(TaggerDeepAgent, EvaderDeepAgent):
         self.taggerModel = AgentModel(7, config=modelConfig, modelPath=taggerModelPath)
         self.evaderModel = AgentModel(7, config=modelConfig, modelPath=evaderModelPath)
 
-        print("Created Full Deep Agent")
+        log("Created Full Deep Agent")
 
     def reduceState(self, agentData, taggerData, playersData, powerUpsData):
         state = self.basicReduceState(agentData, taggerData, playersData, powerUpsData)

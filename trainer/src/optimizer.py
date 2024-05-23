@@ -1,3 +1,4 @@
+from src.logger import log
 import numpy as np
 import datetime
 import os
@@ -33,6 +34,10 @@ class Optimizer:
         self.sNorm = np.zeros(self.n)
         self.step = np.zeros(self.n)
         self.lastStep = np.zeros(self.n)
+        self.parents = np.zeros((self.mu, self.n))
+        self.parents = np.zeros((self.mu, self.n))
+
+        self.firstGen = True
 
         if config:
             if 'mu' in config: self.mu = config['mu']
@@ -43,7 +48,7 @@ class Optimizer:
             if 'chihat' in config: self.chihat = config['chihat']
 
             if self.mu > self.lamb:
-                print("Error: Parent population cannot be larger than total population")
+                log("Error: Parent population cannot be larger than total population")
 
         self.noise_table = []
         self.w = np.array([np.log(self.mu + 0.5) - np.log(i) for i in range(1, self.mu + 1)])
@@ -52,9 +57,12 @@ class Optimizer:
         self.log_writer = tf.summary.create_file_writer(logDir + "/evolution")
         self.log_writer.set_as_default()
 
-        print(f"Initialized optimizer n: {self.n} mu: {self.mu} sigma: {self.delta}")
+        log(f"Initialized optimizer n: {self.n} lambda: {lamb} mu: {self.mu} delta: {self.delta}")
 
     def getParams(self):
+        # if not self.firstGen and len(self.noise_table) < self.mu:
+        #     noise = self.parentNoises[len(self.noise_table)]
+        # else:
         noise = rng.normal(size=self.n)
         self.noise_table.append(noise)
         params = self.x + self.delta * np.dot(self.B, noise)
@@ -65,6 +73,9 @@ class Optimizer:
     def update(self, generation, rewards):
 
         sorting = np.array(rewards).argsort()[::-1][:self.mu]
+        # self.parents = [self.x + self.delta * np.dot(self.B, self.noise_table[i]) for i in sorting]
+
+        # Compute step, add to mean
         self.z = np.zeros(self.n)
         for i in range(self.mu):
             self.z += self.w[i] * self.noise_table[sorting[i]]
@@ -72,6 +83,7 @@ class Optimizer:
         self.x += self.step
         self.noise_table.clear()
 
+        # CMA && CSA
         eigvals, eigvecs = np.linalg.eigh(self.C)
         Bnorm = np.copy(eigvecs)
         for i in range(self.n):
@@ -85,10 +97,18 @@ class Optimizer:
         self.C = (1 - self.ccov) * self.C + self.ccov * np.dot(self.s, self.s.T)
         self.delta = self.delta * np.exp(self.beta * (np.linalg.norm(self.sNorm) - self.chiHat))
 
+        # Calculate parent noise equivelents for u + l
+        # Binv = np.linalg.inv(self.B)
+        # self.parentNoises = [np.dot(Binv, (y - self.x) / self.delta) for y in self.parents]
+
+        # Logging
         avgReward = 0
-        for i in sorting:
-            avgReward += rewards[i]
-        avgReward /= len(sorting)
+        for x in rewards:
+            avgReward += x
+        avgReward /= len(rewards)
+        # for i in sorting:
+        #     avgReward += rewards[i]
+        # avgReward /= len(sorting)
 
         stepCorrelation = np.dot(normalize(self.step), normalize(self.lastStep))
         self.lastStep = np.copy(self.step)
@@ -98,3 +118,5 @@ class Optimizer:
         tf.summary.scalar('delta', data=self.delta, step=generation)
         tf.summary.scalar('path length', data=np.linalg.norm(self.sNorm), step=generation)
         tf.summary.scalar('step correlation', data=stepCorrelation, step=generation)
+
+        self.firstGen = False
